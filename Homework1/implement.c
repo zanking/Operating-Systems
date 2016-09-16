@@ -9,13 +9,12 @@
 }*/
 
 int main(){
-	
+
 	int number1 = 3;
 	int number2 = 1;
 	int *result=NULL;
-	int x = syscall(326,10,12,&result);//simpleadd(number1,number2, &result);
+	int x = syscall(326,11,12,&result);//simpleadd(number1,number2, &result);
 	printf("%d\n", result);
 	printf("%d\n", x);
 	return 0;
 }
-	
