@@ -20,7 +20,7 @@ ssize_t simple_char_driver_read (struct file *pfile, char __user *buffer, size_t
 	/*  current position of the opened file*/
 	/* copy_to_user function. source is device_buffer (the buffer defined at the start of the code) and destination is the userspace buffer *buffer */
 	printk(KERN_ALERT "Reading...\n");
-	copy_to_user(buffer, device_buffer, length)
+	copy_to_user(buffer, device_buffer, length);
 	return 0;
 }
 
@@ -33,7 +33,8 @@ ssize_t simple_char_driver_write (struct file *pfile, const char __user *buffer,
 	/*  current position of the opened file*/
 	/* copy_from_user function. destination is device_buffer (the buffer defined at the start of the code) and source is the userspace 		buffer *buffer */
 	printk(KERN_ALERT "Writing...\n");
-	copy_from_user(buffer, device_buffer, length)
+	copy_from_user(buffer, device_buffer, length);
+	printk(KERN_ALERT "Wrote %d bytes.", length);
 	return length;
 }
 
@@ -70,7 +71,7 @@ static int simple_char_driver_init(void)
 	/* print to the log file that the init function is called.*/
 	printk(KERN_ALERT "entering %s function\n",__FUNCTION__);
 	/* register the device */
-	register_chrdev(300, DEV_NAME, &simple_char_driver_file_operations)
+	register_chrdev(300, DEV_NAME, &simple_char_driver_file_operations);
 	return 0;
 }
 
@@ -79,7 +80,7 @@ static int simple_char_driver_exit(void)
 	/* print to the log file that the exit function is called.*/
 	printk(KERN_ALERT "exiting %s function\n",__FUNCTION__);
 	/* unregister  the device using the register_chrdev() function. */
-	unregister_chrdev(300, DEV_NAME)
+	unregister_chrdev(300, DEV_NAME);
 	return 0;
 }
 
