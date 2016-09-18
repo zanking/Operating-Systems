@@ -19,6 +19,8 @@ ssize_t simple_char_driver_read (struct file *pfile, char __user *buffer, size_t
 	/*  length is the length of the userspace buffer*/
 	/*  current position of the opened file*/
 	/* copy_to_user function. source is device_buffer (the buffer defined at the start of the code) and destination is the userspace buffer *buffer */
+	printk(KERN_ALERT "Reading...\n");
+	copy_to_user(buffer, device_buffer, length)
 	return 0;
 }
 
@@ -30,6 +32,8 @@ ssize_t simple_char_driver_write (struct file *pfile, const char __user *buffer,
 	/*  length is the length of the userspace buffer*/
 	/*  current position of the opened file*/
 	/* copy_from_user function. destination is device_buffer (the buffer defined at the start of the code) and source is the userspace 		buffer *buffer */
+	printk(KERN_ALERT "Writing...\n");
+	copy_from_user(buffer, device_buffer, length)
 	return length;
 }
 
@@ -37,12 +41,16 @@ ssize_t simple_char_driver_write (struct file *pfile, const char __user *buffer,
 int simple_char_driver_open (struct inode *pinode, struct file *pfile)
 {
 	/* print to the log file that the device is opened and also print the number of times this device has been opened until now*/
+	opens++;
+	printk(KERN_ALERT "Opened %d times. Device is opened.\n",opens);
 	return 0;
 }
 
 
 int simple_char_driver_close (struct inode *pinode, struct file *pfile)
 {
+	closes++;
+	printk(KERN_ALERT "Closed %d times. Device is closed.\n",opens);
 	/* print to the log file that the device is closed and also print the number of times this device has been closed until now*/
 	return 0;
 }
