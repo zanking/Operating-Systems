@@ -6,8 +6,8 @@
 #include<linux/fs.h>
 #include<asm/uaccess.h>
 #define BUFFER_SIZE 1024
-#define DEV_NAME "PA2_simple_char_driver.c"
-#define MAJOR_NUMBER 300
+#define DEV_NAME "PA2_simple_char_driver.c" //define device name
+#define MAJOR_NUMBER 300 //define device major number
 
 
 static char device_buffer[BUFFER_SIZE];
@@ -51,6 +51,10 @@ struct file_operations simple_char_driver_file_operations = {
 
 	.owner   = THIS_MODULE,
 	/* add the function pointers to point to the corresponding file operations. look at the file fs.h in the linux souce code*/
+	.write = simple_char_driver_write,
+	.read = simple_char_driver_read,
+	.open = simple_char_driver_open,
+	.close = simple_char_driver_close,
 };
 
 static int simple_char_driver_init(void)
@@ -58,6 +62,7 @@ static int simple_char_driver_init(void)
 	/* print to the log file that the init function is called.*/
 	printk(KERN_ALERT "entering %s function\n",__FUNCTION__);
 	/* register the device */
+	register_chrdev(300, DEV_NAME, &simple_char_driver_file_operations)
 	return 0;
 }
 
@@ -66,7 +71,11 @@ static int simple_char_driver_exit(void)
 	/* print to the log file that the exit function is called.*/
 	printk(KERN_ALERT "exiting %s function\n",__FUNCTION__);
 	/* unregister  the device using the register_chrdev() function. */
+	unregister_chrdev(300, DEV_NAME)
 	return 0;
 }
 
+
 /* add module_init and module_exit to point to the corresponding init and exit function*/
+module_init(simple_char_driver_init);
+module_exit(simple_char_driver_exit);
