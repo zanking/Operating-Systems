@@ -6,9 +6,13 @@
 #include<linux/fs.h>
 #include<asm/uaccess.h>
 #define BUFFER_SIZE 1024
+#define DEV_NAME "PA2_simple_char_driver.c"
+#define MAJOR_NUMBER 300
+
 
 static char device_buffer[BUFFER_SIZE];
-
+static int opens = 0;
+static int closes = 0;
 ssize_t simple_char_driver_read (struct file *pfile, char __user *buffer, size_t length, loff_t *offset)
 {
 	/* *buffer is the userspace buffer to where you are writing the data you want to be read from the device file*/
@@ -52,6 +56,7 @@ struct file_operations simple_char_driver_file_operations = {
 static int simple_char_driver_init(void)
 {
 	/* print to the log file that the init function is called.*/
+	printk(KERN_ALERT "entering %s function\n",__FUNCTION__);
 	/* register the device */
 	return 0;
 }
@@ -59,6 +64,7 @@ static int simple_char_driver_init(void)
 static int simple_char_driver_exit(void)
 {
 	/* print to the log file that the exit function is called.*/
+	printk(KERN_ALERT "exiting %s function\n",__FUNCTION__);
 	/* unregister  the device using the register_chrdev() function. */
 	return 0;
 }
