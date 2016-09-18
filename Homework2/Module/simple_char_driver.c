@@ -64,7 +64,7 @@ struct file_operations simple_char_driver_file_operations = {
 	.write = simple_char_driver_write,
 	.read = simple_char_driver_read,
 	.open = simple_char_driver_open,
-	.close = simple_char_driver_close,
+	.release = simple_char_driver_close,
 };
 
 static int simple_char_driver_init(void)

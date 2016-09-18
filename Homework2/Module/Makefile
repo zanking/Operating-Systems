@@ -1,1 +1,1 @@
-obj-m:=PA2_simple_char_driver.c
+obj-m:=simple_char_driver.o
