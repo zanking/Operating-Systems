@@ -20,8 +20,10 @@ ssize_t simple_char_driver_read (struct file *pfile, char __user *buffer, size_t
 	/*  current position of the opened file*/
 	/* copy_to_user function. source is device_buffer (the buffer defined at the start of the code) and destination is the userspace buffer *buffer */
 	printk(KERN_ALERT "Reading...\n");
-	copy_to_user(buffer, device_buffer, length);
 	printk(KERN_ALERT "Read %d bytes.\n", length);
+	printk(KERN_ALERT "Read %c BYTES HEY.\n", buffer);
+	copy_to_user(buffer, device_buffer, length);
+
 	return 0;
 }
 

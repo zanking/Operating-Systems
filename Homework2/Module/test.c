@@ -16,14 +16,15 @@ int main(){
       case 'w':
       case 'W':
         printf("Enter the data you want to write to the device:");
-        scanf("%s", buffer);
+        scanf("%c", buffer);
+
         write(file, buffer, BUFF_SIZE);
         while(getchar() != '\n'); //make sure we dont fall in a loop
         break;
 
       case 'r': case 'R':
         read(file, buffer, BUFF_SIZE);
-        printf("Data read from device: %s\n", buffer);
+        printf("Data read from device: %c\n", buffer);
         while(getchar()!='\n');
         break;
 
