@@ -21,10 +21,10 @@ ssize_t simple_char_driver_read (struct file *pfile, char __user *buffer, size_t
 	/* copy_to_user function. source is device_buffer (the buffer defined at the start of the code) and destination is the userspace buffer *buffer */
 	printk(KERN_ALERT "Reading...\n");
 	printk(KERN_ALERT "Read %d bytes.\n", length);
-	
-	copy_to_user(buffer, device_buffer, length);
 
-	return 0;
+	if(copy_to_user(buffer, device_buffer, BUFFER_SIZE)) return 0;
+
+	return length;
 }
 
 
@@ -35,9 +35,15 @@ ssize_t simple_char_driver_write (struct file *pfile, const char __user *buffer,
 	/*  length is the length of the userspace buffer*/
 	/*  current position of the opened file*/
 	/* copy_from_user function. destination is device_buffer (the buffer defined at the start of the code) and source is the userspace 		buffer *buffer */
+	// *offset = strlen(device_buffer);
+	if (*offset >= BUFFER_SIZE) *offset = BUFFER_SIZE - 1;
+
+	if ((*offset + length) >= BUFFER_SIZE) length = (BUFFER_SIZE - *offset) - 1;
+
 	printk(KERN_ALERT "Writing...\n");
-	copy_from_user(buffer, device_buffer, length);
+	copy_from_user(&device_buffer[*offset],buffer, length);
 	printk(KERN_ALERT "Wrote %d bytes.\n", length);
+	*offset+=length;
 	return length;
 }
 

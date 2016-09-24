@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h> //file control options
+#include <string.h>
 
 #define DEVICE "/dev/simple_char_device"
 #define BUFF_SIZE 1024
@@ -18,13 +19,13 @@ int main(){
 
         printf("Enter the data you want to write to the device:");
         scanf("%s", buffer);
-        write(file, buffer, BUFF_SIZE);
+        write(file, buffer, strlen(buffer));
         while(getchar() != '\n'); //make sure we dont fall in a loop
         break;
 
       case 'r': case 'R':
 
-        read(file, buffer, BUFF_SIZE);
+        read(file, buffer, strlen(buffer));
         printf("Data read from device: %s\n", buffer);
         while(getchar()!='\n');
         break;
