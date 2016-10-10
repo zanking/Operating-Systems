@@ -7,7 +7,7 @@
  * Description:
  * 	This file contains the reference non-threaded
  *      solution to this assignment.
- *  
+ *
  */
 
 #include <stdlib.h>
@@ -30,8 +30,9 @@ int main(int argc, char* argv[]){
     char hostname[SBUFSIZE];
     char errorstr[SBUFSIZE];
     char firstipstr[INET6_ADDRSTRLEN];
-    int i;
     
+    int i;
+
     /* Check Arguments */
     if(argc < MINARGS){
 	fprintf(stderr, "Not enough arguments: %d\n", (argc - 1));
@@ -48,25 +49,25 @@ int main(int argc, char* argv[]){
 
     /* Loop Through Input Files */
     for(i=1; i<(argc-1); i++){
-	
+
 	/* Open Input File */
 	inputfp = fopen(argv[i], "r");
 	if(!inputfp){
 	    sprintf(errorstr, "Error Opening Input File: %s", argv[i]);
 	    perror(errorstr);
 	    break;
-	}	
+	}
 
 	/* Read File and Process*/
 	while(fscanf(inputfp, INPUTFS, hostname) > 0){
-	
+
 	    /* Lookup hostname and get IP string */
 	    if(dnslookup(hostname, firstipstr, sizeof(firstipstr))
 	       == UTIL_FAILURE){
 		fprintf(stderr, "dnslookup error: %s\n", hostname);
 		strncpy(firstipstr, "", sizeof(firstipstr));
 	    }
-	
+
 	    /* Write to Output File */
 	    fprintf(outputfp, "%s,%s\n", hostname, firstipstr);
 	}
