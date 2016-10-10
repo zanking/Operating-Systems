@@ -18,6 +18,9 @@ pthread-hello: pthread-hello.o
 lookup.o: lookup.c
 	$(CC) $(CFLAGS) $<
 
+multi-lookup.o: multi-lookup.c
+	$(CC) $(CFLAGS) $<
+
 queueTest.o: queueTest.c
 	$(CC) $(CFLAGS) $<
 

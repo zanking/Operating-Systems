@@ -7,7 +7,7 @@
  * Description:
  * 	This file contains test code for the included
  *      queue.
- *  
+ *
  */
 
 #include <stdlib.h>
@@ -35,7 +35,7 @@ int main(int argc, char* argv[]){
     /* Setup payload_in as int* array from
      * 0 to TEST_SIZE-1 */
     for(i=0; i<TEST_SIZE; i++){
-	payload_in[i] = 
+	payload_in[i] =
 	    malloc(sizeof(*(payload_in[i])));
 	*(payload_in[i]) = i;
     }
@@ -105,7 +105,7 @@ int main(int argc, char* argv[]){
 		"error: queue_push did not fail"
 		" when full!\n");
     }
-    
+
     /* Test queue pop */
     for(i=0; i<TEST_SIZE; i++){
 	if((payload_out[i] = queue_pop(&q)) == NULL){

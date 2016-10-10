@@ -35,72 +35,44 @@
 pthread_cond_t condA;
 pthread_cond_t condB;
 
+//global needed vars
+// FILE* file;
+pthread_mutex_t* queueQ;
+pthread_mutex_t* fileWrite;
+queue* Q;
+// int* status
 
 
-//set up a struct to contain inputs of functions
-
-typedef struct writer{
-  FILE* file; //pass the file
-  pthread_mutex_t* queueQ; //points to the mtuex that locks the shared queue resorce
-  queue* Q //points to our queue
-}writer;
 
 
-typedef struct reader{
-  FILE* file;
-  pthread_mutex_t* queueQ;
-  pthread_mutex_t* out;
-  queue *Q;
-  int* status
-}reader;
 
-
-//////////////////////////////////////////////////////////////
-
-void* writeQueue(void* pn){
-
+void* writeQueue(FILE* fileName){
   char hostname[MAX_NAME_LENGTH]; //
-  writer* parameter = pn;
-
-  FILE* fileName = parameter -> file; //read from input struct to get file element of input
-  pthread_mutex_t* lockQueue = parameter->queueQ; //set the queue lock
-  queue* bigQueue = parameter->Q; //define the main queue
-
   char * attachment; //contains name and ip
-
   int written = 0; //determine if writing was a success
   int error = 0;
-
-
-  // FIX THIDS
-
-
-
-
   while(fscanf(fileName, INPUTFS, hostname) > 0){
+
     while(!written){ //while the file hasnt been written to
-      error = pthread_mutex_lock(lockQueue); //lock queue and check for error
+      error = pthread_mutex_lock(queueQ); //lock queue and check for error
       if(error){
         fprintf(stderr, "Mutex error when locking queue %d\n", error);
       }
-      if(queue_is_full(bigQueue)){ //check the status of the queue
+      if(queue_is_full(Q)){ //check the status of the queue
         // if queue is full we dont want to write
-
-         pthread_cond_wait(&condA, lockQueue);//wait if the queue is full
+         pthread_cond_wait(&condA, queueQ);//wait if the queue is full
 
       //wait for resolver thread to wake us up
       }
       else {
         attachment = malloc(MAX_NAME_LENGTH); //allocate space for payload (ip & address)
-        if (attachment == NULL){
-          fprintf(stderr, "Unable to allocate space for payload\n ");
-        }
+
         attachment=strncpy(attachment, hostname, MAX_NAME_LENGTH); //copys line from file into the attachment
-        if(queue_push(bigQueue, attachment)== QUEUE_FAILURE){ //push attachment onto queue
+        if(queue_push(Q, attachment)== QUEUE_FAILURE){ //push attachment onto queue
           fprintf(stderr, "Unable to push to the queue\n");
         }
         //now we want to release our mutex lock
-        error = pthread_mutex_unlock(lockQueue);
+        error = pthread_mutex_unlock(queueQ);
         if (error){
           fprintf(stderr, "Mutex error when unlocking the queue\n");
         }
@@ -110,43 +82,41 @@ void* writeQueue(void* pn){
     }
     written = 0; //
   }
-  //
-  if(fclose(fileName)){
-    fprintf(stderr, "Error closing file after pushing to queue");
-  }
 
   return NULL;
 
 }
-
-void* readQueue(void*pn){
-  reader* parameter = pn;
-  char hostname[MAX_NAME_LENGTH];
-
-
-}
+//
+// void* readQueue(void*pn){
+//   reader* parameter = pn;
+//   char hostname[MAX_NAME_LENGTH];
+//
+//
+// }
 
 
 int main(int argc, char* argv[]){
-  (void) argc;
-  (void) argv;
-  threadNum = argc -2; //argv ends at argc -1, and we only care about input files
+
+  int threadNum = argc -2; //argv ends at argc -1, and we only care about input files
 
 
   /* Setup Local Vars */
-  pthread_t threads[threadNum];
+  pthread_t qthreads[threadNum];  //set array of threads
   int rc;
-  long t;
-  long cpyt[NUM_THREADS];
+  int t;
+
 
   /* Spawn NUM_THREADS threads */
-  for(t=0;t<NUM_THREADS;t++){
+  for(t=0;t<threadNum;t++){
     printf("In main: creating thread %ld\n", t);
-    cpyt[t] = t;
-    rc = pthread_create(&(threads[t]), NULL, PrintHello, &(cpyt[t]));
+    rc = pthread_create(&(qthreads[t]), NULL, writeQueue, &argv[t]);
     if (rc){
       printf("ERROR; return code from pthread_create() is %d\n", rc);
       exit(EXIT_FAILURE);
-}
+    }
+    for (t=0; t<threadNum; t++){
+      pthread_join(qthreads[t], NULL);
+    }
   }
+  return 0;
 }

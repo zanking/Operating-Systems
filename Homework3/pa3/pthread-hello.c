@@ -31,7 +31,7 @@ void* PrintHello(void* threadid)
 	    /* Sleep for 1 to 2 Seconds */
 	    usleep((rand()%100)*10000+1000000);
 	}
-    
+
     /* Exit, Returning NULL*/
     return NULL;
 }
@@ -47,7 +47,7 @@ int main(int argc, char *argv[])
     int rc;
     long t;
     long cpyt[NUM_THREADS];
-    
+
     /* Spawn NUM_THREADS threads */
     for(t=0;t<NUM_THREADS;t++){
 	printf("In main: creating thread %ld\n", t);
@@ -58,16 +58,16 @@ int main(int argc, char *argv[])
 	    exit(EXIT_FAILURE);
 	}
     }
-    
+
     /* Wait for All Theads to Finish */
     for(t=0;t<NUM_THREADS;t++){
 	pthread_join(threads[t],NULL);
     }
     printf("All of the threads were completed!\n");
-    
+
 
     /* Last thing that main() should do */
-    /* pthread_exit unnecessary due to previous join */ 
+    /* pthread_exit unnecessary due to previous join */
     //pthread_exit(NULL);
 
     return 0;
