@@ -31,6 +31,12 @@
  #define queueSize = 40 //10 less than max
 
 
+//global condition Vars
+pthread_cond_t condA;
+pthread_cond_t condB;
+
+
+
 //set up a struct to contain inputs of functions
 
 typedef struct writer{
@@ -39,7 +45,7 @@ typedef struct writer{
   queue* Q //points to our queue
 }writer;
 
-//struct to contain outputs of functions
+
 typedef struct reader{
   FILE* file;
   pthread_mutex_t* queueQ;
@@ -52,31 +58,37 @@ typedef struct reader{
 //////////////////////////////////////////////////////////////
 
 void* writeQueue(void* pn){
+
   char hostname[MAX_NAME_LENGTH]; //
   writer* parameter = pn;
 
-  FILE* fileName = parameter -> file; //read from input struct
+  FILE* fileName = parameter -> file; //read from input struct to get file element of input
   pthread_mutex_t* lockQueue = parameter->queueQ; //set the queue lock
   queue* bigQueue = parameter->Q; //define the main queue
 
-  char * attachment; //the payload
+  char * attachment; //contains name and ip
 
-  int success = 0; //determine if writing was a success
+  int written = 0; //determine if writing was a success
   int error = 0;
 
+
+  // FIX THIDS
+
+
+
+
   while(fscanf(fileName, INPUTFS, hostname) > 0){
-    while(!success){ //while the file hasnt been written to
+    while(!written){ //while the file hasnt been written to
       error = pthread_mutex_lock(lockQueue); //lock queue and check for error
       if(error){
         fprintf(stderr, "Mutex error when locking queue %d\n", error);
       }
       if(queue_is_full(bigQueue)){ //check the status of the queue
         // if queue is full we dont want to write
-        error = pthread_mutex_unlock(lockQueue); //release the mutex lock so that other threads can execute
-        if (error){
-          fprintf(stderr, "Mutex error when unlocking queue %d\n", error);
-        }
-      usleep(1000); //suspend processing for 1000 microseconds
+
+         pthread_cond_wait(&condA, lockQueue);//wait if the queue is full
+
+      //wait for resolver thread to wake us up
       }
       else {
         attachment = malloc(MAX_NAME_LENGTH); //allocate space for payload (ip & address)
@@ -92,11 +104,11 @@ void* writeQueue(void* pn){
         if (error){
           fprintf(stderr, "Mutex error when unlocking the queue\n");
         }
-        success = 1;
+        written = 1;
         //now we have pushed on the queue
             }
     }
-    success = 0; //
+    written = 0; //
   }
   //
   if(fclose(fileName)){
@@ -112,4 +124,29 @@ void* readQueue(void*pn){
   char hostname[MAX_NAME_LENGTH];
 
 
+}
+
+
+int main(int argc, char* argv[]){
+  (void) argc;
+  (void) argv;
+  threadNum = argc -2; //argv ends at argc -1, and we only care about input files
+
+
+  /* Setup Local Vars */
+  pthread_t threads[threadNum];
+  int rc;
+  long t;
+  long cpyt[NUM_THREADS];
+
+  /* Spawn NUM_THREADS threads */
+  for(t=0;t<NUM_THREADS;t++){
+    printf("In main: creating thread %ld\n", t);
+    cpyt[t] = t;
+    rc = pthread_create(&(threads[t]), NULL, PrintHello, &(cpyt[t]));
+    if (rc){
+      printf("ERROR; return code from pthread_create() is %d\n", rc);
+      exit(EXIT_FAILURE);
+}
+  }
 }
