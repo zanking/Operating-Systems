@@ -8,6 +8,8 @@
  * 	threaded solotuion to dnslookup
  *
  */
+ // databases
+ //
  #include <stdlib.h>
  #include <stdio.h>
  #include <string.h>
@@ -32,8 +34,8 @@
 
 
 //global condition Vars
-
-pthread_cond_t condB;
+pthread_cond_t writers;
+pthread_cond_t readers;
 
 //global needed vars
 // FILE* file;
@@ -42,19 +44,23 @@ pthread_cond_t condB;
 
 
 typedef struct writeQueueParams{
-  FILE * fileWrite;
+  FILE* fileWrite;
   pthread_mutex_t* queueQ;
-  pthread_cond_t condA;
+
   queue* Q;
-} writeQueueParams;
+} writeQueue;
 
 
 void* writeQueue(void *p){
     printf("CALLED");
   char hostname[MAX_NAME_LENGTH]; //
-  char * attachment; //contains name and ip
+  char* attachment; //contains name and ip
   int written = 0; //determine if writing was a success
   int error = 0;
+  writeQueue* parameter = p; //point parameter to our input p
+  FILE* file = paramater->fileWrite;
+  pthread_mutex_t* lockqueue = paramater->queueQ;
+  queue* queueQ = paramater->Q;
   while(fscanf(fileWrite, INPUTFS, hostname) > 0){
 
     while(!written){ //while the file hasnt been written to
@@ -62,9 +68,9 @@ void* writeQueue(void *p){
       if(error){
         fprintf(stderr, "Mutex error when locking queue %d\n", error);
       }
-      if(queue_is_full(Q)){ //check the status of the queue
+      if(queue_is_full(queueQ)){ //check the status of the queue
         // if queue is full we dont want to write
-         pthread_cond_wait(&condA, queueQ);//wait if the queue is full
+         pthread_cond_wait(&writers, queueQ);//wait if the queue is full
 
       //wait for resolver thread to wake us up
       }
@@ -72,7 +78,7 @@ void* writeQueue(void *p){
         attachment = malloc(MAX_NAME_LENGTH); //allocate space for payload (ip & address)
 
         attachment=strncpy(attachment, hostname, MAX_NAME_LENGTH); //copys line from file into the attachment
-        if(queue_push(Q, attachment)== QUEUE_FAILURE){ //push attachment onto queue
+        if(queue_push(queueQ, attachment)== QUEUE_FAILURE){ //push attachment onto queue
           fprintf(stderr, "Unable to push to the queue\n");
         }
         //now we want to release our mutex lock
@@ -80,7 +86,8 @@ void* writeQueue(void *p){
         if (error){
           fprintf(stderr, "Mutex error when unlocking the queue\n");
         }
-        //send signal to the readers
+        ret = pthread_cond_signal(&readers); //wake up the readers if the queue was empty
+
         written = 1;
         //now we have pushed on the queue
             }
@@ -114,12 +121,12 @@ int main(int argc, char* argv[]){
   /* Setup Local Vars */
   pthread_t qthreads[threadNum];  //set array of threads for writing to the queue
   pthread_mutex_t queuelock;
-  queue bigqueue
+  queue bigqueue;
 
   int rc;
   int t, errorc, j;
 
-  writeQueueParams inputParams[threadNum];
+  writeQueue inputParams[threadNum];
   // fprintf("Number of threads = %p\n", argv[1]);
   printf("Can you see me\n");
 
@@ -139,24 +146,34 @@ int main(int argc, char* argv[]){
     fprintf(stderr, "Error No: %d\n",errorc);
     return EXIT_FAILURE;
   }
-  /* Spawn NUM_THREADS threads */
-  for(t=0;t<threadNum+1;t++){
-    for(j = 0; j<threadNum; j++){
-
-      FILE* currentFile = inputFiles[j];
-      inputParams
-
-      printf("In main: creating thread %ld\n", t);
-      fileWrite = argv[t];
-      rc = pthread_create(&(qthreads[t]), NULL, writeQueue, &argv[t]);
-      if (rc){
-        printf("ERROR; return code from pthread_create() is %d\n", rc);
-        exit(EXIT_FAILURE);
+  /* open all files*/
+  for(t=0;t<threadNum-2;t++){
+    inputParams[t] = fopen(argv[i], "r");
+      if (!inputParams[t]){
+        printf("Error opening input file");
+        return EXIT_FAILURE;
       }
   }
-    for (t=0; t<threadNum; t++){
-      pthread_join(qthreads[t], NULL);
+
+
+
+  /* make the reading/ queuepushing threads*/
+  for(j = 0; j<threadNum; j++){
+
+    FILE* currentFile = inputFiles[j];
+    inputParams[t].queueQ = &queuelock;
+    inputParams[t].fileWrite = currentFile;
+    inputParams[t].Q = &bigqueue;
+
+    printf("In main: creating thread %ld\n", t);
+    rc = pthread_create(&(qthreads[t]), NULL, writeQueue, &inputParams[t]);
+    if (rc){
+      printf("ERROR; return code from pthread_create() is %d\n", rc);
+      exit(EXIT_FAILURE);
     }
+}
+  for (t=0; t<threadNum; t++){
+    pthread_join(qthreads[t], NULL);
   }
   return 0;
 }
