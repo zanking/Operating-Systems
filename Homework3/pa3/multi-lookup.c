@@ -8,8 +8,7 @@
  * 	threaded solotuion to dnslookup
  *
  */
- // databases
- //
+
  #include <stdlib.h>
  #include <stdio.h>
  #include <string.h>
@@ -40,7 +39,7 @@ pthread_mutex_t lockqueue;
 
 //global needed vars
 // FILE* file;
-;
+
 // int* status
 
 
@@ -51,10 +50,6 @@ typedef struct writeQueueParams{
 
 
 void* writeQueue(void *p){
-
-  // FILE* currentFile = inputFiles[j];
-  // inputParams[t].fileWrite = currentFile;
-  // inputParams[t].Q = &bigqueue;
 
   printf("CALLED");
   writeQueueP* parameter = p; //point parameter to our input p
@@ -104,13 +99,6 @@ void* writeQueue(void *p){
   return NULL;
 
 }
-//
-// void* readQueue(void*pn){
-//   reader* parameter = pn;
-//   char hostname[MAX_NAME_LENGTH];
-//
-//
-// }
 
 
 int main(int argc, char* argv[]){
@@ -128,7 +116,7 @@ int main(int argc, char* argv[]){
   }
 
   /* Setup Local Vars */
-  pthread_t qthreads[threadNum];  //set array of threads for writing to the queue
+
 
   queue bigqueue;
 
@@ -156,9 +144,11 @@ int main(int argc, char* argv[]){
     return EXIT_FAILURE;
   }
   /* open all files*/
-  for(t=0;t<threadNum-2;t++){
-    inputParams[t] = fopen(argv[t], "r");
-      if (!inputParams[t]){
+  for(t=1;t<threadNum+1;t++){
+    printf("opening file");
+
+    inputFiles[t] = fopen(argv[t], "r");
+      if (!inputFiles[t]){
         printf("Error opening input file");
         return EXIT_FAILURE;
       }
@@ -167,15 +157,18 @@ int main(int argc, char* argv[]){
 
 
   /* make the reading/ queuepushing threads*/
+    pthread_t qthreads[threadNum];  //set array of threads for writing to the queue
   for(j = 0; j<threadNum; j++){
-
+    inputParams = malloc(sizeof(struct writeQueueParams));
     FILE* currentFile = inputFiles[j];
-    inputParams[t].fileWrite = currentFile;
-    inputParams[t].Q = &bigqueue;
+    inputParams[j].fileWrite = currentFile;
+    inputParams[j].Q = &bigqueue;
 
-    printf("In main: creating thread %ld\n", t);
-    rc = pthread_create(&(qthreads[t]), NULL, writeQueue, &inputParams[t]);
+    printf("In main: creating thread %d\n", j);
+    rc = pthread_create(&(qthreads[j]), NULL, writeQueue, &inputParams[j]);
+    printf("called thread");
     if (rc){
+        printf("supossed to call thread");
       printf("ERROR; return code from pthread_create() is %d\n", rc);
       exit(EXIT_FAILURE);
     }
