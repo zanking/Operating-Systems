@@ -97,18 +97,14 @@
  }
 
  void* resolve(void* OutFile){
-  //  printf("in resolve \n");
-
    char firstipstr[INET6_ADDRSTRLEN];
-   FILE* outputfp = fopen((char*)OutFile, "w");
-   if(!outputfp){
-   perror("Error Opening Output File\n");
-  //  return EXIT_FAILURE;
-    return NULL;
-    }
+      printf("locked file\n");
+
     // printf("about to lock queue\n");
    while(*alive || !(queue_is_empty(critical))){
      char* hostname;
+
+
     //  printf("about to lock queue in while loop\n");
    pthread_mutex_lock(&queueLock);
    if(queue_is_empty(critical)){
@@ -119,7 +115,17 @@
    printf("popped off queue------------------------------------\n" );
    pthread_mutex_unlock(&queueLock);
    pthread_cond_signal(&reader);
-   pthread_mutex_lock(&fileLock);
+
+
+   pthread_mutex_lock(&fileLock); //now open file
+ FILE* outputfp = fopen((char*)OutFile, "a"); //open to append
+ if(!outputfp){
+ perror("Error Opening Output File\n");
+//  return EXIT_FAILURE;
+  return NULL;
+  }
+
+
 //   printf("unlocked queue and signaled writer\n");
 //   printf("about to run DNS lookup\n");
    if(dnslookup(hostname, firstipstr, sizeof(firstipstr))
@@ -129,14 +135,17 @@
    }
    printf("about to write to the file\n");
 
-   printf("locked file\n");
+
    fprintf(outputfp, "%s,%s\n", hostname, firstipstr);
    printf("wrote to file but still have lock\n");
-   pthread_mutex_unlock(&fileLock);
+
    free(hostname); //free our memory
    printf("wrote to the file we gucci\n");
+     fclose(outputfp);
+      pthread_mutex_unlock(&fileLock);
  }
-  fclose(outputfp);
+
+  //  pthread_mutex_unlock(&fileLock);
   // fclose(OutFile);
    printf("closed file!!!!!!!!!!!!!!!!!!!!\n");
    return NULL;
@@ -207,227 +216,9 @@
      pthread_join(outThread[i],NULL);
 
    }
+   queue_cleanup(critical);
+   pthread_mutex_destroy(&queueLock);
+   pthread_mutex_destroy(&fileLock);
    return 0;
 
  }
-
-
-
-
-
-
-
-
-//global condition Vars
-// pthread_cond_t writers;
-// pthread_cond_t readers;
-// pthread_mutex_t* lockqueue;
-// queue Q;
-//
-// void* request(FILE* file, queue* Q){
-//     char hostname[SBUFSIZE];
-//     char errorstr[SBUFSIZE];
-//     char* attachment;
-//
-//     FILE* inputfp = fopen(argv[i], "r");
-//
-//     if(!inputfp){
-//        sprintf(errorstr, "Error Opening Input File: %s", argv[i]);
-//        perror(errorstr);
-//        break;
-//      }
-//
-//
-//   	while(fscanf(inputfp, INPUTFS, hostname) > 0){
-//       pthread_mutex_lock(&lockqueue);
-//       if(queue_is_full(&Q)){
-//   	     fprintf(stderr, "Queue is full\n");
-//          pthread_cond_wait(&readers); ////////////////////////////fix
-//     }
-//
-//     attachment = strdup(hostname);
-//     queue_push(&Q, &attachment);
-//     pthread_mutex_unlock(&lockqueue);
-//     pthread_cond_signal(&readers)
-//   }
-//
-// return NULL;
-// }
-//
-// void * resolve(FILE* file, queue* Q){
-//   char* payload;
-//   char firstipstr[INET6_ADDRSTRLEN];
-//   outputfp = fopen(argv[(argc-1)], "w");
-//   if(!outputfp){
-//     perror("Error Opening Output File");
-//     return EXIT_FAILURE;
-//   }
-//   pthread_mutex_lock(&Q);
-//
-//   if queue_is_empty(&Q){
-//     pthread_cond_wait(&writers)
-//   }
-//   payload = queue_pop(&Q);
-//   pth
-// }
-//
-//  int main(int argc, char* argv[]){
-//
-//    FILE* inputfp = NULL;
-//    FILE* outputfp = NULL;
-//    char hostname[SBUFSIZE];
-//    char errorstr[SBUFSIZE];
-//    char firstipstr[INET6_ADDRSTRLEN];
-//    int i;
-//    /* Loop Through Input Files */
-//    for(i=1; i<(argc-1); i++){
-//
-//      /* Open Input File */
-//
-//
-//  }
-//  }
-
-
-//global needed vars
-// FILE* file;
-
-// int* status
-
-//
-// typedef struct writeQueueParams{
-//   FILE* fileWrite;
-//   queue* Q;
-// } writeQueueP;
-//
-//
-// void* writeQueue(void *p){
-//
-//   printf("CALLED");
-//   writeQueueP* parameter = p; //point parameter to our input p
-//   char hostname[MAX_NAME_LENGTH]; //
-//   char* attachment; //contains name and ip
-//   int written = 0; //determine if writing was a success
-//   int error = 0;
-//
-//
-//   queue* queueQ = parameter->Q;
-//     FILE* file = parameter->fileWrite;
-//   while(fscanf(file, INPUTFS, hostname) > 0){
-//
-//     while(!written){ //while the file hasnt been written to
-//       error = pthread_mutex_lock(&lockqueue); //lock queue and check for error
-//       if(error){
-//         fprintf(stderr, "Mutex error when locking queue %d\n", error);
-//       }
-//       if(queue_is_full(queueQ)){ //check the status of the queue
-//         // if queue is full we dont want to write
-//          pthread_cond_wait(&writers, &lockqueue);//wait if the queue is full
-//
-//       //wait for resolver thread to wake us up
-//       }
-//       else {
-//         attachment = malloc(MAX_NAME_LENGTH); //allocate space for payload (ip & address)
-//
-//         attachment=strncpy(attachment, hostname, MAX_NAME_LENGTH); //copys line from file into the attachment
-//         if(queue_push(queueQ, attachment)== QUEUE_FAILURE){ //push attachment onto queue
-//           fprintf(stderr, "Unable to push to the queue\n");
-//         }
-//         //now we want to release our mutex lock
-//         error = pthread_mutex_unlock(&lockqueue);
-//         if (error){
-//           fprintf(stderr, "Mutex error when unlocking the queue\n");
-//         }
-//
-//         pthread_cond_signal(&readers); //wake up the readers if the queue was empty
-//
-//         written = 1;
-//         //now we have pushed on the queue
-//             }
-//     }
-//     written = 0; //
-//   }
-//
-//   return NULL;
-//
-// }
-//
-//
-// int main(int argc, char* argv[]){
-//
-//   int threadNum = argc -2; //argv ends at argc -1, and we only care about input files
-//
-//   /*make an array of file pointers*/
-//   FILE* inputFiles[threadNum];
-//
-//   // Check to see how many arguments were passed
-//   if(argc < MIN_RESOLVER_THREADS){
-//     fprintf(stderr, "Not enough arguments: %d\n", (argc - 1));
-//     fprintf(stderr, "Usage:\n %s %s\n", argv[0], USAGE);
-//     return EXIT_FAILURE;
-//   }
-//
-//   /* Setup Local Vars */
-//
-//
-//   queue bigqueue;
-//
-//   int rc;
-//   int t, errorc, j;
-//
-//   writeQueueP inputParams[threadNum];
-//   // fprintf("Number of threads = %p\n", argv[1]);
-//   printf("Can you see me\n");
-//
-//   //initalize the queue
-//   if(queue_init(&bigqueue, QUEUE_SIZE)==QUEUE_FAILURE){
-//     fprintf(stderr,"Error creating the Queue\n");
-//     return EXIT_FAILURE;
-//   }
-//
-//
-//   //create the mutex for queuelock
-//   errorc=pthread_mutex_init(&lockqueue, NULL);
-//
-//   //check to see that the mutex was sucessful
-//   if(errorc){
-//     fprintf(stderr, "Error creating the Queue Mutex\n");
-//     fprintf(stderr, "Error No: %d\n",errorc);
-//     return EXIT_FAILURE;
-//   }
-//   /* open all files*/
-//   for(t=1;t<threadNum+1;t++){
-//     printf("opening file");
-//
-//     inputFiles[t] = fopen(argv[t], "r");
-//       if (!inputFiles[t]){
-//         printf("Error opening input file");
-//         return EXIT_FAILURE;
-//       }
-//   }
-//
-//
-//
-//   /* make the reading/ queuepushing threads*/
-//     pthread_t qthreads[threadNum];  //set array of threads for writing to the queue
-//   for(j = 0; j<threadNum; j++){
-//     // inputParams = malloc(sizeof(struct writeQueueParams));
-//     FILE* currentFile = inputFiles[j];
-//     inputParams[j].fileWrite = currentFile;
-//     inputParams[j].Q = &bigqueue;
-//
-//     printf("In main: creating thread %d\n", j);
-//     malloc(sizeof(pthread))
-//     rc = pthread_create(&(qthreads[j]), NULL, writeQueue, &inputParams[j]);
-//     printf("called thread");
-//     if (rc){
-//         printf("supossed to call thread");
-//       printf("ERROR; return code from pthread_create() is %d\n", rc);
-//       exit(EXIT_FAILURE);
-//     }
-// }
-//   for (t=0; t<threadNum; t++){
-//     pthread_join(qthreads[t], NULL);
-//   }
-//   return 0;
-// }
