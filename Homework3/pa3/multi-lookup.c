@@ -87,7 +87,7 @@
           printf("pushed on queue\n");
        pthread_mutex_unlock(&queueLock);
           printf("unlocked queue about to signal reader\n");
-       pthread_cond_signal(&reader);
+       pthread_cond_signal(&writer);
           printf("signaled reader\n");
    }
       printf("about to close input file\n");
@@ -118,7 +118,8 @@
    hostname = queue_pop(critical);
    printf("popped off queue------------------------------------\n" );
    pthread_mutex_unlock(&queueLock);
-   pthread_cond_signal(&writer);
+   pthread_cond_signal(&reader);
+   pthread_mutex_lock(&fileLock);
 //   printf("unlocked queue and signaled writer\n");
 //   printf("about to run DNS lookup\n");
    if(dnslookup(hostname, firstipstr, sizeof(firstipstr))
@@ -127,7 +128,7 @@
  strncpy(firstipstr, "", sizeof(firstipstr));
    }
    printf("about to write to the file\n");
-   pthread_mutex_lock(&fileLock);
+
    printf("locked file\n");
    fprintf(outputfp, "%s,%s\n", hostname, firstipstr);
    printf("wrote to file but still have lock\n");
