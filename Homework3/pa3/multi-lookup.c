@@ -60,6 +60,7 @@
 
   	/* Open Input File */
   	inputfp = fopen((char*)file, "r");
+       printf("opened input file");
   	  if(!inputfp){
   	    printf("Error Opening Input File: %s\n");
   	    perror(errorstr);
@@ -69,23 +70,34 @@
 
 
    while(fscanf(inputfp, INPUTFS, hostname) > 0){
+        printf("about to lock queue\n");
      pthread_mutex_lock(&queueLock);
+        printf("locked queue\n");
      if(queue_is_full(critical)){
+       printf("yo queue full fam\n");
        pthread_cond_wait(&reader,&queueLock);
+       printf("signaled reader to wake tf up bruh\n");
      }
 
       //  payload = malloc(SBUFSIZE);
+
        payload = strdup(hostname);
+          printf("copied hostname about to push on queue\n");
        queue_push(critical,payload);
+          printf("pushed on queue\n");
        pthread_mutex_unlock(&queueLock);
+          printf("unlocked queue about to signal reader\n");
        pthread_cond_signal(&reader);
+          printf("signaled reader\n");
    }
+      printf("about to close input file\n");
  fclose(inputfp);
+   printf("closed input file\n");
  return NULL;
  }
 
  void* resolve(void* OutFile){
-   printf("in resolve \n");
+  //  printf("in resolve \n");
 
    char firstipstr[INET6_ADDRSTRLEN];
    FILE* outputfp = fopen((char*)OutFile, "w");
@@ -94,33 +106,38 @@
   //  return EXIT_FAILURE;
     return NULL;
     }
-    printf("about to lock queue\n");
+    // printf("about to lock queue\n");
    while(*alive || !(queue_is_empty(critical))){
      char* hostname;
-     printf("about to lock queue in while loop\n");
+    //  printf("about to lock queue in while loop\n");
    pthread_mutex_lock(&queueLock);
    if(queue_is_empty(critical)){
      pthread_cond_wait(&writer,&queueLock);
    }
-   printf("about to pop off queue\n");
+  //  printf("about to pop off queue\n");
    hostname = queue_pop(critical);
-   printf("popped off queue\n" );
+   printf("popped off queue------------------------------------\n" );
    pthread_mutex_unlock(&queueLock);
    pthread_cond_signal(&writer);
-   printf("unlocked queue and signaled writer\n");
-   printf("about to run DNS lookup\n");
+//   printf("unlocked queue and signaled writer\n");
+//   printf("about to run DNS lookup\n");
    if(dnslookup(hostname, firstipstr, sizeof(firstipstr))
       == UTIL_FAILURE){
  fprintf(stderr, "dnslookup error: %s\n", hostname);
  strncpy(firstipstr, "", sizeof(firstipstr));
    }
-   printf("about to write to the file");
+   printf("about to write to the file\n");
    pthread_mutex_lock(&fileLock);
+   printf("locked file\n");
    fprintf(outputfp, "%s,%s\n", hostname, firstipstr);
+   printf("wrote to file but still have lock\n");
    pthread_mutex_unlock(&fileLock);
    free(hostname); //free our memory
+   printf("wrote to the file we gucci\n");
  }
   fclose(outputfp);
+  // fclose(OutFile);
+   printf("closed file!!!!!!!!!!!!!!!!!!!!\n");
    return NULL;
  }
 
@@ -156,6 +173,10 @@
    for(i = 0; i < ifiles; i++){
      printf("about to call pthread create requester\n");
      int newRequestTh = pthread_create(&thread[i], NULL, request, argv[i+1]);
+     if (newRequestTh){
+         printf("ERROR; return code from pthread_create() is %d\n", newRequestTh);
+         exit(EXIT_FAILURE);
+     }
      printf("called requester in for loop\n");
      //error check
    }
@@ -163,6 +184,11 @@
    for(i = 0; i < proc; i++){
      printf("about to call pthread create resolver\n");
      int resolvers = pthread_create(&outThread[i], NULL, resolve, argv[argc-1]);
+     if (resolvers){
+         printf("ERROR; return code from pthread_create() is %d\n", resolvers);
+         exit(EXIT_FAILURE);
+     }
+
      printf("called resolvers\n");
 //error check this too
 
@@ -180,13 +206,7 @@
      pthread_join(outThread[i],NULL);
 
    }
-
-
-
    return 0;
-
-
-
 
  }
 
