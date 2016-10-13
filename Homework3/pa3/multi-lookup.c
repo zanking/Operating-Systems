@@ -50,7 +50,7 @@
 
 
  void* request(void* file){
-   printf("hello please from request");
+   printf("hello please from request\n");
    char hostname[SBUFSIZE];
    char errorstr[SBUFSIZE];
    char* payload;
@@ -61,7 +61,7 @@
   	/* Open Input File */
   	inputfp = fopen((char*)file, "r");
   	  if(!inputfp){
-  	    printf("Error Opening Input File: %s");
+  	    printf("Error Opening Input File: %s\n");
   	    perror(errorstr);
         return NULL;
   	  }
@@ -75,7 +75,7 @@
      }
 
       //  payload = malloc(SBUFSIZE);
-       payload = strncpy(payload,hostname,SBUFSIZE);
+       payload = strdup(hostname);
        queue_push(critical,payload);
        pthread_mutex_unlock(&queueLock);
        pthread_cond_signal(&reader);
@@ -85,51 +85,58 @@
  }
 
  void* resolve(void* OutFile){
-   printf("pprint resolve please");
+   printf("in resolve \n");
 
    char firstipstr[INET6_ADDRSTRLEN];
    FILE* outputfp = fopen((char*)OutFile, "w");
    if(!outputfp){
-   perror("Error Opening Output File");
+   perror("Error Opening Output File\n");
   //  return EXIT_FAILURE;
     return NULL;
     }
+    printf("about to lock queue\n");
    while(*alive || !(queue_is_empty(critical))){
      char* hostname;
+     printf("about to lock queue in while loop\n");
    pthread_mutex_lock(&queueLock);
    if(queue_is_empty(critical)){
      pthread_cond_wait(&writer,&queueLock);
    }
+   printf("about to pop off queue\n");
    hostname = queue_pop(critical);
+   printf("popped off queue\n" );
    pthread_mutex_unlock(&queueLock);
    pthread_cond_signal(&writer);
+   printf("unlocked queue and signaled writer\n");
+   printf("about to run DNS lookup\n");
    if(dnslookup(hostname, firstipstr, sizeof(firstipstr))
       == UTIL_FAILURE){
  fprintf(stderr, "dnslookup error: %s\n", hostname);
  strncpy(firstipstr, "", sizeof(firstipstr));
    }
+   printf("about to write to the file");
    pthread_mutex_lock(&fileLock);
    fprintf(outputfp, "%s,%s\n", hostname, firstipstr);
    pthread_mutex_unlock(&fileLock);
-   free(hostname);
+   free(hostname); //free our memory
  }
   fclose(outputfp);
    return NULL;
  }
 
  int main(int argc, char* argv[]){
-   printf("A");
+  //  printf("A");
    alive = malloc(sizeof(int));
-   printf("B");
+  //  printf("B");
    critical = malloc(sizeof(queue));
 
-   printf("hello can u see me");
+  //  printf("hello can u see me");
    *alive = 1;
    int i;
-   printf("hello can u see me 2");
+  //  printf("hello can u see me 2");
    int proc = sysconf (_SC_NPROCESSORS_ONLN);
 
-   printf("hello can u see me");
+  //  printf("hello can u see me");
    if(argc < MINARGS){
   	  fprintf(stderr, "Not enough arguments: %d\n", (argc - 1));
    	fprintf(stderr, "Usage:\n %s %s\n", argv[0], USAGE);
@@ -144,17 +151,19 @@
    int ifiles = argc -2;
    pthread_t *thread = (pthread_t *) malloc(sizeof(pthread_t)*ifiles);
    pthread_t *outThread = (pthread_t *) malloc(sizeof(pthread_t)* proc);
-   printf("allocated pthread memory");
+   printf("allocated pthread memory about to launch request\n");
   //  char errorstr[SBUFSIZE];
    for(i = 0; i < ifiles; i++){
-     printf("about to call pthread create requester");
+     printf("about to call pthread create requester\n");
      int newRequestTh = pthread_create(&thread[i], NULL, request, argv[i+1]);
+     printf("called requester in for loop\n");
      //error check
    }
 
    for(i = 0; i < proc; i++){
-     printf("about to call pthread create resolver");
+     printf("about to call pthread create resolver\n");
      int resolvers = pthread_create(&outThread[i], NULL, resolve, argv[argc-1]);
+     printf("called resolvers\n");
 //error check this too
 
    }

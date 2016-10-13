@@ -1,0 +1,13 @@
+facebook.com,157.240.2.35
+yahoo.com,98.138.253.109
+wikipedia.org,208.80.153.224
+baidu.com,180.149.132.47
+blogspot.com,216.58.217.41
+taobao.com,140.205.220.96
+bing.com,204.79.197.200
+soso.com,106.120.151.169
+ask.com,66.235.120.127
+youku.com,101.227.10.19
+sdjjdsaf.com,
+.49.20
+wmfo.org,23.92.21.128
