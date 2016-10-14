@@ -54,7 +54,7 @@
    char hostname[SBUFSIZE];
    char errorstr[SBUFSIZE];
    char* payload;
-   payload = (char*)malloc(SBUFSIZE*sizeof(char));
+  //  payload = (char*)malloc(SBUFSIZE*sizeof(char));
 
    FILE* inputfp = NULL;
 
@@ -62,7 +62,7 @@
   	inputfp = fopen((char*)file, "r");
        printf("opened input file");
   	  if(!inputfp){
-  	    printf("Error Opening Input File: %s\n");
+  	    printf("Error Opening Input File:\n");
   	    perror(errorstr);
         return NULL;
   	  }
@@ -89,6 +89,7 @@
           printf("unlocked queue about to signal reader\n");
        pthread_cond_signal(&writer);
           printf("signaled reader\n");
+          // free(payload)
    }
       printf("about to close input file\n");
  fclose(inputfp);
@@ -176,8 +177,8 @@
    }
 
    int ifiles = argc -2;
-   pthread_t *thread = (pthread_t *) malloc(sizeof(pthread_t)*ifiles);
-   pthread_t *outThread = (pthread_t *) malloc(sizeof(pthread_t)* proc);
+   pthread_t thread[ifiles]; //= (pthread_t *) malloc(sizeof(pthread_t)*ifiles);
+   pthread_t outThread[proc]; // = (pthread_t *) malloc(sizeof(pthread_t)* proc);
    printf("allocated pthread memory about to launch request\n");
   //  char errorstr[SBUFSIZE];
    for(i = 0; i < ifiles; i++){
@@ -216,9 +217,12 @@
      pthread_join(outThread[i],NULL);
 
    }
+   //free(alive);
    queue_cleanup(critical);
    pthread_mutex_destroy(&queueLock);
    pthread_mutex_destroy(&fileLock);
+   pthread_cond_destroy(&reader);
+   pthread_cond_destroy(&writer);
    return 0;
 
  }
