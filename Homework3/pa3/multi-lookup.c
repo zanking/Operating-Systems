@@ -118,7 +118,7 @@
    int proc = sysconf (_SC_NPROCESSORS_ONLN);
    if(argc < MINARGS){
   	  fprintf(stderr, "Not enough arguments: %d\n", (argc - 1));
-   	fprintf(stderr, "Usage:\n %s %s\n", argv[0], USAGE);
+   	fprintf(stderr, "Usage:\n %s %s\n", argvl[0], USAGE);
      return EXIT_FAILURE;
    }
 
