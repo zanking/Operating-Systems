@@ -94,19 +94,21 @@ int main(int argc, char* argv[]){
         pCircle = inCircle/inSquare;
         piCalc = pCircle * 4.0;
 
-//Wait for children
+
+
+        /*wait for the kids*/
 
         printf( "[son] pid %d from pid %d | ", getpid(), getppid() );
-        printf(stdout, "pi = %f\n", piCalc);
+        printf("pi = %f \n", piCalc);
         exit( 0 );
       }
     }
 
-
+    /*Parent waits for children*/
     for ( int i = 0; i < forks; i++ ){
         wait( NULL );
     }
-      /* Print result */
+
 
     return 0;
 
