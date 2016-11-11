@@ -22,11 +22,11 @@
 #define DEFAULT_ITERATIONS 1000000
 #define RADIUS (RAND_MAX / 2)
 
-inline double dist(double x0, double y0, double x1, double y1){
+static double dist(double x0, double y0, double x1, double y1){
     return sqrt(pow((x1-x0),2) + pow((y1-y0),2));
 }
 
-inline double zeroDist(double x, double y){
+static double zeroDist(double x, double y){
     return dist(0, 0, x, y);
 }
 
@@ -75,10 +75,10 @@ int main(int argc, char* argv[]){
 	    exit(EXIT_FAILURE);
 	}
     }
-    
+
     /* Set process to max prioty for given scheduler */
     param.sched_priority = sched_get_priority_max(policy);
-    
+
     /* Set new scheduler policy */
     fprintf(stdout, "Current Scheduling Policy: %d\n", sched_getscheduler(0));
     fprintf(stdout, "Setting Scheduling Policy to: %d\n", policy);
