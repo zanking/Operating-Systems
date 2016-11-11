@@ -1,0 +1,22 @@
+Starting test runs...
+Current Scheduling Policy: 0
+Setting Scheduling Policy to: 0
+New Scheduling Policy: 0
+pi = 3.141745
+Calculating pi over 100000000 iterations using SCHED_FIFO with 1 simultaneous process...
+Current Scheduling Policy: 0
+Setting Scheduling Policy to: 1
+New Scheduling Policy: 1
+pi = 3.141745
+Calculating pi over 100000000 iterations using SCHED_RR with 1 simultaneous process...
+Current Scheduling Policy: 0
+Setting Scheduling Policy to: 2
+New Scheduling Policy: 2
+pi = 3.141745
+Copying 102400 bytes in blocks of 1024 from rwinput to rwoutput
+using SCHED_OTHER with 1 simultaneous process...
+Reading from rwinput and writing to rwoutput-3644
+Read:    102400 bytes in 100 reads
+Written: 102400 bytes in 100 writes
+Read input file in 1 pass
+Processed 102400 bytes in blocks of 1024 bytes

@@ -20,6 +20,7 @@
 /* Local Defines */
 #define DEFAULT_ITERATIONS 1000000
 #define RADIUS (RAND_MAX / 2)
+#define FORKS 1
 
 /* Local Functions */
 static double dist(double x0, double y0, double x1, double y1){
@@ -34,6 +35,7 @@ int main(int argc, char* argv[]){
 
     long i;
     long iterations;
+    int forks; //number of times to fork parent process
     double x, y;
     double inCircle = 0.0;
     double inSquare = 0.0;
@@ -53,6 +55,24 @@ int main(int argc, char* argv[]){
 	    exit(EXIT_FAILURE);
 	}
     }
+    ///////////////////////////////////////////////////////////////////////
+    /*set number of forks if passed in argv*/
+    if (argc < 3){
+      forks = FORKS;
+      printf("Using default number of forks\n");
+    }
+    else{
+      forks = atoi(argv[2]);
+      printf("Using user specified forks\n");
+      if(forks < 1){
+        fprintf(stderr, "Bad fork value\n");
+        exit(EXIT_FAILURE);
+      }
+    }
+/////////////////////////////////////////////////////////////////////////////
+
+
+    /* Process
 
     /* Calculate pi using statistical methode across all iterations*/
     for(i=0; i<iterations; i++){

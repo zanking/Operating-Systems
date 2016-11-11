@@ -20,10 +20,12 @@ echo Building code...
 $MAKE clean
 $MAKE
 
-echo Starting test runs...
+echo Starting test runs... > test.txt
 
-echo Calculating pi over $ITERATIONS iterations using SCHED_OTHER with 1 simultaneous process... >> test.txt
-/usr/bin/time -f >>test.txt "$TIMEFORMAT" sudo ./pi-sched $ITERATIONS SCHED_OTHER > /dev/null >> test.txt
+echo Calculating pi over $ITERATIONS iterations using SCHED_OTHER with 1 simultaneous process...
+echo $TIMEFORMAT | /usr/bin/time -f >> test.txt
+#/usr/bin/time -f "$TIMEFORMAT" > test.txt
+sudo ./pi-sched $ITERATIONS SCHED_OTHER > /dev/null >>test.txt
 
 echo Calculating pi over $ITERATIONS iterations using SCHED_FIFO with 1 simultaneous process... >> test.txt
 /usr/bin/time -f "$TIMEFORMAT" sudo ./pi-sched $ITERATIONS SCHED_FIFO > /dev/null >>test.txt
