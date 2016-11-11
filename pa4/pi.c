@@ -70,26 +70,44 @@ int main(int argc, char* argv[]){
       }
     }
 /////////////////////////////////////////////////////////////////////////////
+    /* begin forks*/
 
+    printf( "[dad] pid %d\n", getpid() );
 
-    /* Process
+    for ( int i = 0; i < forks; i++ ){
+      if ( fork() == 0 )
+        {
 
-    /* Calculate pi using statistical methode across all iterations*/
-    for(i=0; i<iterations; i++){
-	x = (random() % (RADIUS * 2)) - RADIUS;
-	y = (random() % (RADIUS * 2)) - RADIUS;
-	if(zeroDist(x,y) < RADIUS){
-	    inCircle++;
-	}
-	inSquare++;
+        /* Process
+
+        /* Calculate pi using statistical methode across all iterations*/
+        for(i=0; i<iterations; i++){
+    	    x = (random() % (RADIUS * 2)) - RADIUS;
+    	    y = (random() % (RADIUS * 2)) - RADIUS;
+        	if(zeroDist(x,y) < RADIUS){
+        	    inCircle++;
+        	}
+        	inSquare++;
+        }
+
+        /* Finish calculation */
+        pCircle = inCircle/inSquare;
+        piCalc = pCircle * 4.0;
+
+//Wait for children
+
+        printf( "[son] pid %d from pid %d | ", getpid(), getppid() );
+        printf(stdout, "pi = %f\n", piCalc);
+        exit( 0 );
+      }
     }
 
-    /* Finish calculation */
-    pCircle = inCircle/inSquare;
-    piCalc = pCircle * 4.0;
 
-    /* Print result */
-    fprintf(stdout, "pi = %f\n", piCalc);
+    for ( int i = 0; i < forks; i++ ){
+        wait( NULL );
+    }
+      /* Print result */
 
     return 0;
+
 }
