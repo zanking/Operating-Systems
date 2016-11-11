@@ -18,6 +18,9 @@
 #include <math.h>
 #include <errno.h>
 #include <sched.h>
+#include <unistd.h>
+
+#define FORKS 1
 
 #define DEFAULT_ITERATIONS 1000000
 #define RADIUS (RAND_MAX / 2)
@@ -36,6 +39,9 @@ int main(int argc, char* argv[]){
     long iterations;
     struct sched_param param;
     int policy;
+    int forks;
+    int niceness;
+    int niceNumb;
     double x, y;
     double inCircle = 0.0;
     double inSquare = 0.0;
@@ -51,6 +57,34 @@ int main(int argc, char* argv[]){
     if(argc < 3){
 	policy = SCHED_OTHER;
     }
+
+    if (argc < 4){
+      forks = FORKS;
+      printf("Using default number of forks\n");
+    }
+    else{
+      forks = atoi(argv[3]);
+    //  printf("Using user specified forks\n");
+      if(forks <= 1){
+        fprintf(stderr, "Bad fork value\n");
+        exit(EXIT_FAILURE);
+      }
+    }
+
+    if (argc < 5){
+      niceness = 0;
+      printf("Not changing priority");
+    }
+    else{
+      niceness = atoi(argv[4]);
+      if (niceness != 1){
+        printf("Not changing priority");
+        niceness = 0;
+      }
+
+      if argv !1
+    }
+
     /* Set iterations if supplied */
     if(argc > 1){
 	iterations = atol(argv[1]);
@@ -70,40 +104,61 @@ int main(int argc, char* argv[]){
 	else if(!strcmp(argv[2], "SCHED_RR")){
 	    policy = SCHED_RR;
 	}
-	else{
-	    fprintf(stderr, "Unhandeled scheduling policy\n");
-	    exit(EXIT_FAILURE);
-	}
+
     }
 
-    /* Set process to max prioty for given scheduler */
-    param.sched_priority = sched_get_priority_max(policy);
+  param.sched_priority = sched_get_priority_max(policy);
+    for ( int i = 0; i < forks; i++ ){
+      if ( fork() == 0 )
+        {
+          if (niceness == 1){
+            printf("niceness == 1")
+            niceNumb ++;
+            int test = nice(niceNumb);
+//error handling
+            if (test == -1){
+              fprintf(stderr, "Unable to change niceness\n");
+        	    exit(EXIT_FAILURE);
+            }
+          }
 
-    /* Set new scheduler policy */
-    fprintf(stdout, "Current Scheduling Policy: %d\n", sched_getscheduler(0));
-    fprintf(stdout, "Setting Scheduling Policy to: %d\n", policy);
-    if(sched_setscheduler(0, policy, &param)){
-	perror("Error setting scheduler policy");
-	exit(EXIT_FAILURE);
+
+        /* Set process to max prioty for given scheduler */
+
+
+        /* Set new scheduler policy */
+        fprintf(stdout, "Current Scheduling Policy: %d\n", sched_getscheduler(0));
+        fprintf(stdout, "Setting Scheduling Policy to: %d\n", policy);
+        if(sched_setscheduler(0, policy, &param)){
+    	perror("Error setting scheduler policy");
+    	exit(EXIT_FAILURE);
+        }
+        fprintf(stdout, "New Scheduling Policy: %d\n", sched_getscheduler(0));
+
+        /* Calculate pi using statistical methode across all iterations*/
+        for(i=0; i<iterations; i++){
+    	x = (random() % (RADIUS * 2)) - RADIUS;
+    	y = (random() % (RADIUS * 2)) - RADIUS;
+    	if(zeroDist(x,y) < RADIUS){
+    	    inCircle++;
+    	}
+    	inSquare++;
+        }
+
+        /* Finish calculation */
+        pCircle = inCircle/inSquare;
+        piCalc = pCircle * 4.0;
+
+        /* Print result */
+        fprintf(stdout, "pi = %f\n", piCalc);
+
+        exit( 0 );
+      }
     }
-    fprintf(stdout, "New Scheduling Policy: %d\n", sched_getscheduler(0));
 
-    /* Calculate pi using statistical methode across all iterations*/
-    for(i=0; i<iterations; i++){
-	x = (random() % (RADIUS * 2)) - RADIUS;
-	y = (random() % (RADIUS * 2)) - RADIUS;
-	if(zeroDist(x,y) < RADIUS){
-	    inCircle++;
-	}
-	inSquare++;
+    for ( int i = 0; i < forks; i++ ){
+        wait( NULL );
     }
-
-    /* Finish calculation */
-    pCircle = inCircle/inSquare;
-    piCalc = pCircle * 4.0;
-
-    /* Print result */
-    fprintf(stdout, "pi = %f\n", piCalc);
 
     return 0;
 }
