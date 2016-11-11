@@ -63,8 +63,8 @@ int main(int argc, char* argv[]){
     }
     else{
       forks = atoi(argv[2]);
-      printf("Using user specified forks\n");
-      if(forks < 1){
+    //  printf("Using user specified forks\n");
+      if(forks <= 1){
         fprintf(stderr, "Bad fork value\n");
         exit(EXIT_FAILURE);
       }
@@ -72,7 +72,7 @@ int main(int argc, char* argv[]){
 /////////////////////////////////////////////////////////////////////////////
     /* begin forks*/
 
-    printf( "[dad] pid %d\n", getpid() );
+    // printf( "[dad] pid %d\n", getpid() );
 
     for ( int i = 0; i < forks; i++ ){
       if ( fork() == 0 )
@@ -98,8 +98,8 @@ int main(int argc, char* argv[]){
 
         /*wait for the kids*/
 
-        printf( "[son] pid %d from pid %d | ", getpid(), getppid() );
-        printf("pi = %f \n", piCalc);
+        //printf( "[son] pid %d from pid %d | ", getpid(), getppid() );
+      //  printf("pi = %f \n", piCalc);
         exit( 0 );
       }
     }
