@@ -25,7 +25,12 @@ $MAKE clean
 $MAKE
 
 echo ----------------------------------------------------------------------------------1
+# echo Copying $BYTESTOCOPY bytes in blocks of $BLOCKSIZE from rwinput to rwoutput
+echo using SCHED_OTHER with 5 simultaneous process...
+/usr/bin/time -f "$TIMEFORMAT" ./rw $BYTESTOCOPY $BLOCKSIZE $FORKA
 
-echo Copying $BYTESTOCOPY bytes in blocks of $BLOCKSIZE from rwinput to rwoutput
-echo using SCHED_OTHER with 1 simultaneous process...
+echo using SCHED_OTHER with 10 simultaneous process...
 /usr/bin/time -f "$TIMEFORMAT" ./rw $BYTESTOCOPY $BLOCKSIZE $FORKB
+
+echo using SCHED_OTHER with 100 simultaneous process...
+/usr/bin/time -f "$TIMEFORMAT" ./rw $BYTESTOCOPY $BLOCKSIZE $FORKC

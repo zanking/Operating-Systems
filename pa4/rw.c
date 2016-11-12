@@ -22,18 +22,21 @@
 #include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sched.h>
 
 /* Local Defines */
 #define MAXFILENAMELENGTH 80
 #define DEFAULT_INPUTFILENAME "rwinput"
-#define DEFAULT_OUTPUTFILENAMEBASE "/testOut/rwoutput"
+#define DEFAULT_OUTPUTFILENAMEBASE "testOut/"
 #define DEFAULT_BLOCKSIZE 1024
 #define DEFAULT_TRANSFERSIZE 1024*100
 #define FORKS 1
 
 int main(int argc, char* argv[]){
-    int testn;
+    int testn = 0;
+    struct sched_param param;
     int forks;
+    int policy;
     int niceness;
     int niceNumb;
     int rv;
@@ -96,20 +99,34 @@ int main(int argc, char* argv[]){
         exit(EXIT_FAILURE);
       }
     }
-
-    if (argc < 5){
+    /* add in scheduling policy*/
+    if(argc < 5){
+	     policy = SCHED_OTHER;
+    }
+    else{
+      if(!strcmp(argv[2], "SCHED_OTHER")){
+    	    policy = SCHED_OTHER;
+    	}
+    	else if(!strcmp(argv[2], "SCHED_FIFO")){
+    	    policy = SCHED_FIFO;
+    	}
+    	else if(!strcmp(argv[2], "SCHED_RR")){
+    	    policy = SCHED_RR;
+    	}
+    }
+    if (argc < 6){
       niceness = 0;
       printf("Not changing priority");
     }
     else{
-      niceness = atoi(argv[4]);
+      niceness = atoi(argv[5]);
       if (niceness != 1){
         printf("Not changing priority");
         niceness = 0;
       }
     }
 
-    if(argc < 6){
+    if(argc < 7){
 	     if(strnlen(DEFAULT_INPUTFILENAME, MAXFILENAMELENGTH) >= MAXFILENAMELENGTH){
 	        fprintf(stderr, "Default input filename too long\n");
 	         exit(EXIT_FAILURE);
@@ -117,11 +134,11 @@ int main(int argc, char* argv[]){
 	     strncpy(inputFilename, DEFAULT_INPUTFILENAME, MAXFILENAMELENGTH);
     }
     else{
-	     if(strnlen(argv[5], MAXFILENAMELENGTH) >= MAXFILENAMELENGTH){
+	     if(strnlen(argv[6], MAXFILENAMELENGTH) >= MAXFILENAMELENGTH){
 	        fprintf(stderr, "Input filename too long\n");
 	         exit(EXIT_FAILURE);
 	        }
-	     strncpy(inputFilename, argv[3], MAXFILENAMELENGTH);
+	     strncpy(inputFilename, argv[6], MAXFILENAMELENGTH);
     }
 
   //   if(argc < 5){
@@ -168,7 +185,15 @@ int main(int argc, char* argv[]){
             }
           }
 
+    /* make a new random file in the testOut folder */
     strncpy(outputFilename, DEFAULT_OUTPUTFILENAMEBASE, MAXFILENAMELENGTH);
+    // char *newName = malloc(strlen(outputFilename)+strlen(DEFAULT_OUTPUTFILENAMEBASE)+1);//+1 for the zero-terminator
+    // //in real code you would check for errors in malloc here
+    // strcpy(newName, DEFAULT_OUTPUTFILENAMEBASE);
+    // strcat(newName, testn);
+    // printf("hereerererer");
+    // printf(newName);
+
     /* Allocate buffer space */
     buffersize = blocksize;
     if(!(transferBuffer = malloc(buffersize*sizeof(*transferBuffer)))){
@@ -195,6 +220,8 @@ int main(int argc, char* argv[]){
 	exit(EXIT_FAILURE);
     }
     if((outputFD =
+
+
 	open(outputFilename,
 	     O_WRONLY | O_CREAT | O_TRUNC | O_SYNC,
 	     S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH)) < 0){
@@ -267,6 +294,8 @@ int main(int argc, char* argv[]){
 	exit(EXIT_FAILURE);
     }
       printf('CHILD \n');
+      // free(newName);
+
       exit( 0 );
     }
   }
