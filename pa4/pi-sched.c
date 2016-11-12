@@ -116,28 +116,20 @@ int main(int argc, char* argv[]){
             printf("niceness == 1");
             niceNumb ++;
             int test = nice(niceNumb);
-//error handling
+            //error handling after decreasing priority
             if (test == -1){
               fprintf(stderr, "Unable to change niceness\n");
         	    exit(EXIT_FAILURE);
             }
           }
 
-
-        /* Set process to max prioty for given scheduler */
-
-
-        /* Set new scheduler policy */
-        // fprintf(stdout, "Current Scheduling Policy: %d\n", sched_getscheduler(0));
-        // fprintf(stdout, "Setting Scheduling Policy to: %d\n", policy);
         if(sched_setscheduler(0, policy, &param)){
     	      perror("Error setting scheduler policy");
     	      exit(EXIT_FAILURE);
         }
-        // fprintf(stdout, "New Scheduling Policy: %d\n", sched_getscheduler(0));
 
         /* Calculate pi using statistical methode across all iterations*/
-        for(i=0; i<iterations; i++){
+      for(i=0; i<iterations; i++){
     	x = (random() % (RADIUS * 2)) - RADIUS;
     	y = (random() % (RADIUS * 2)) - RADIUS;
     	if(zeroDist(x,y) < RADIUS){

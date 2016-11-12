@@ -171,98 +171,98 @@ int main(int argc, char* argv[]){
             }
           }
 
-    /* make a new random file in the testOut folder */
-    strncpy(outputFilename, DEFAULT_OUTPUTFILENAMEBASE, MAXFILENAMELENGTH);
+          /* make a new random file*/
+          strncpy(outputFilename, DEFAULT_OUTPUTFILENAMEBASE, MAXFILENAMELENGTH);
 
-    buffersize = blocksize;
-    if(!(transferBuffer = malloc(buffersize*sizeof(*transferBuffer)))){
-    	perror("Failed to allocate transfer buffer");
-    	exit(EXIT_FAILURE);
-        }
+          buffersize = blocksize;
+          if(!(transferBuffer = malloc(buffersize*sizeof(*transferBuffer)))){
+          	perror("Failed to allocate transfer buffer");
+          	exit(EXIT_FAILURE);
+              }
 
-        /* Open Input File Descriptor in Read Only mode */
-        if((inputFD = open(inputFilename, O_RDONLY | O_SYNC)) < 0){
-    	perror("Failed to open input file");
-    	exit(EXIT_FAILURE);
-        }
+              /* Open Input File Descriptor in Read Only mode */
+          if((inputFD = open(inputFilename, O_RDONLY | O_SYNC)) < 0){
+          	perror("Failed to open input file");
+          	exit(EXIT_FAILURE);
+            }
 
-        /* Open Output File Descriptor in Write Only mode with standard permissions*/
-        rv = snprintf(outputFilename, MAXFILENAMELENGTH, "%s-%d",
-    		  outputFilenameBase, getpid());
-        if(rv > MAXFILENAMELENGTH){
-    	fprintf(stderr, "Output filenmae length exceeds limit of %d characters.\n",
-    		MAXFILENAMELENGTH);
-    	exit(EXIT_FAILURE);
-        }
-        else if(rv < 0){
-    	perror("Failed to generate output filename");
-    	exit(EXIT_FAILURE);
-        }
-        if((outputFD =
+              /* Open Output File Descriptor in Write Only mode with standard permissions*/
+          rv = snprintf(outputFilename, MAXFILENAMELENGTH, "%s-%d",
+      		  outputFilenameBase, getpid());
+          if(rv > MAXFILENAMELENGTH){
+          	fprintf(stderr, "Output filenmae length exceeds limit of %d characters.\n",
+          		MAXFILENAMELENGTH);
+          	exit(EXIT_FAILURE);
+            }
+          else if(rv < 0){
+          	perror("Failed to generate output filename");
+          	exit(EXIT_FAILURE);
+            }
+          if((outputFD =
 
-/*read and write occurs here */
-	open(outputFilename,
-	     O_WRONLY | O_CREAT | O_TRUNC | O_SYNC,
-	     S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH)) < 0){
-	perror("Failed to open output file");
-	exit(EXIT_FAILURE);
-    }
+          /*read and write occurs here */
+          	open(outputFilename,
+          	     O_WRONLY | O_CREAT | O_TRUNC | O_SYNC,
+          	     S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH)) < 0){
+          	perror("Failed to open output file");
+          	exit(EXIT_FAILURE);
+            }
 
-    /* Read from input file and write to output file*/
-    do{
-	/* Read transfersize bytes from input file*/
-	bytesRead = read(inputFD, transferBuffer, buffersize);
-	if(bytesRead < 0){
-	    perror("Error reading input file");
-	    exit(EXIT_FAILURE);
-	}
-	else{
-	    totalBytesRead += bytesRead;
-	    totalReads++;
-	}
+              /* Read from input file and write to output file*/
+              do{
+          	/* Read transfersize bytes from input file*/
+          	bytesRead = read(inputFD, transferBuffer, buffersize);
+          	if(bytesRead < 0){
+          	    perror("Error reading input file");
+          	    exit(EXIT_FAILURE);
+          	}
+          	else{
+          	    totalBytesRead += bytesRead;
+          	    totalReads++;
+          	}
 
-	/* If all bytes were read, write to output file*/
-	if(bytesRead == blocksize){
-	    bytesWritten = write(outputFD, transferBuffer, bytesRead);
-	    if(bytesWritten < 0){
-		perror("Error writing output file");
-		exit(EXIT_FAILURE);
-	    }
-	    else{
-		totalBytesWritten += bytesWritten;
-		totalWrites++;
-	    }
-	}
-	/* Otherwise assume we have reached the end of the input file and reset */
-	else{
-	    if(lseek(inputFD, 0, SEEK_SET)){
-		perror("Error resetting to beginning of file");
-		exit(EXIT_FAILURE);
-	    }
-	    inputFileResets++;
-	}
+          	/* If all bytes were read, write to output file*/
+          	if(bytesRead == blocksize){
+          	    bytesWritten = write(outputFD, transferBuffer, bytesRead);
+          	    if(bytesWritten < 0){
+          		perror("Error writing output file");
+          		exit(EXIT_FAILURE);
+          	    }
+          	    else{
+          		totalBytesWritten += bytesWritten;
+          		totalWrites++;
+          	    }
+          	}
+          	/* Otherwise assume we have reached the end of the input file and reset */
+          	else{
+          	    if(lseek(inputFD, 0, SEEK_SET)){
+          		perror("Error resetting to beginning of file");
+          		exit(EXIT_FAILURE);
+          	    }
+          	    inputFileResets++;
+          	}
 
-    }while(totalBytesWritten < transfersize);
+              }while(totalBytesWritten < transfersize);
 
-    /* Free Buffer */
-    free(transferBuffer);
+              /* Free Buffer */
+              free(transferBuffer);
 
-    /* Close Output File Descriptor */
-    if(close(outputFD)){
-    	perror("Failed to close output file");
-    	exit(EXIT_FAILURE);
-        }
+              /* Close Output File Descriptor */
+              if(close(outputFD)){
+              	perror("Failed to close output file");
+              	exit(EXIT_FAILURE);
+                  }
 
-        /* Close Input File Descriptor */
-        if(close(inputFD)){
-    	perror("Failed to close input file");
-    	exit(EXIT_FAILURE);
-    }
-      printf('CHILD \n');
+                  /* Close Input File Descriptor */
+                  if(close(inputFD)){
+              	perror("Failed to close input file");
+              	exit(EXIT_FAILURE);
+              }
+                printf('CHILD \n');
 
-      exit( 0 );
-    }
-  }
+                exit( 0 );
+              }
+            }
 
   for ( int i = 0; i < forks; i++ ){
       wait( NULL );

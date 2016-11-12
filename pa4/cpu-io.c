@@ -34,7 +34,7 @@
 #define DEFAULT_TRANSFERSIZE 1024*100
 #define FORKS 1
 /* for calc pi */
-#define DEFAULT_ITERATIONS 1000000
+#define DEFAULT_ITERATIONS 100000000
 #define RADIUS (RAND_MAX / 2)
 
 static double dist(double x0, double y0, double x1, double y1){
@@ -60,6 +60,14 @@ int main(int argc, char* argv[]){
     char inputFilename[MAXFILENAMELENGTH];
     char outputFilename[MAXFILENAMELENGTH];
     char outputFilenameBase[MAXFILENAMELENGTH];
+
+
+    long iterations;
+    double x, y;
+    double inCircle = 0.0;
+    double inSquare = 0.0;
+    double pCircle = 0.0;
+    double piCalc = 0.0;
 
     ssize_t transfersize = 0;
     ssize_t blocksize = 0;
@@ -186,6 +194,25 @@ int main(int argc, char* argv[]){
               exit(EXIT_FAILURE);
             }
           }
+
+    /* First run CPU intesive task */
+
+    /* Calculate pi using statistical methode across all iterations*/
+        for(i=0; i<iterations; i++){
+          x = (random() % (RADIUS * 2)) - RADIUS;
+          y = (random() % (RADIUS * 2)) - RADIUS;
+          if(zeroDist(x,y) < RADIUS){
+              inCircle++;
+            }
+          inSquare++;
+          }
+
+        /* Finish calculation */
+        pCircle = inCircle/inSquare;
+        piCalc = pCircle * 4.0;
+
+    /* Next run I/O*/
+
 
     /* make a new random file in the testOut folder */
     strncpy(outputFilename, DEFAULT_OUTPUTFILENAMEBASE, MAXFILENAMELENGTH);
