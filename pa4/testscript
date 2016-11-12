@@ -14,6 +14,7 @@ ITERATIONS=100000000
 FORKA=5
 FORKB=20
 FORKC=100
+PRIORITY=1
 BYTESTOCOPY=102400
 BLOCKSIZE=1024
 TIMEFORMAT="wall=%e user=%U system=%S CPU=%P i-switched=%c v-switched=%w"
@@ -25,7 +26,21 @@ $MAKE
 
 echo Starting test runs...
 
-# CPU BOUND WITH SCHED_OTHER
+echo -------------------------------------------------------------------------------1
+echo CPU BOUND WITH SCHED_OTHER AND PRIORITY
+
+echo Calculating pi over $ITERATIONS iterations using SCHED_OTHER with 5 simultaneous process...
+/usr/bin/time -f "$TIMEFORMAT" sudo ./pi-sched $ITERATIONS SCHED_OTHER $FORKA $PRIORITY > /dev/null
+
+echo Calculating pi over $ITERATIONS iterations using SCHED_OTHER with 20 simultaneous process...
+/usr/bin/time -f "$TIMEFORMAT" sudo ./pi-sched $ITERATIONS SCHED_OTHER $FORKB $PRIORITY > /dev/null
+
+echo Calculating pi over $ITERATIONS iterations using SCHED_OTHER with 100 simultaneous process...
+/usr/bin/time -f "$TIMEFORMAT" sudo ./pi-sched $ITERATIONS SCHED_OTHER $FORKC $PRIORITY > /dev/null
+
+
+echo -------------------------------------------------------------------------------2
+echo CPU BOUND WITH SCHED_OTHER AND NO PRIORITY
 
 echo Calculating pi over $ITERATIONS iterations using SCHED_OTHER with 5 simultaneous process...
 /usr/bin/time -f "$TIMEFORMAT" sudo ./pi-sched $ITERATIONS SCHED_OTHER $FORKA > /dev/null
@@ -36,8 +51,21 @@ echo Calculating pi over $ITERATIONS iterations using SCHED_OTHER with 20 simult
 echo Calculating pi over $ITERATIONS iterations using SCHED_OTHER with 100 simultaneous process...
 /usr/bin/time -f "$TIMEFORMAT" sudo ./pi-sched $ITERATIONS SCHED_OTHER $FORKC > /dev/null
 
-echo -------------------------------------------------------------------------------------
-# CPU BOUND WITH SCHED_FIFO
+echo -------------------------------------------------------------------------------3
+echo CPU BOUND WITH SCHED_FIFO AND PRIORITY
+
+
+echo Calculating pi over $ITERATIONS iterations using SCHED_FIFO with 5 simultaneous process...
+/usr/bin/time -f "$TIMEFORMAT" sudo ./pi-sched $ITERATIONS SCHED_FIFO $FORKA $PRIORITY > /dev/null
+
+echo Calculating pi over $ITERATIONS iterations using SCHED_FIFO with 20 simultaneous process...
+/usr/bin/time -f "$TIMEFORMAT" sudo ./pi-sched $ITERATIONS SCHED_FIFO $FORKB $PRIORITY > /dev/null
+
+echo Calculating pi over $ITERATIONS iterations using SCHED_FIFO with 100 simultaneous process...
+/usr/bin/time -f "$TIMEFORMAT" sudo ./pi-sched $ITERATIONS SCHED_FIFO $FORKC $PRIORITY > /dev/null
+
+echo ---------------------------------------------------------------------------------4
+echo CPU BOUND WITH SCHED_FIFO AND NO PRIORITY
 
 
 echo Calculating pi over $ITERATIONS iterations using SCHED_FIFO with 5 simultaneous process...
@@ -49,8 +77,20 @@ echo Calculating pi over $ITERATIONS iterations using SCHED_FIFO with 20 simulta
 echo Calculating pi over $ITERATIONS iterations using SCHED_FIFO with 100 simultaneous process...
 /usr/bin/time -f "$TIMEFORMAT" sudo ./pi-sched $ITERATIONS SCHED_FIFO $FORKC > /dev/null
 
-echo ---------------------------------------------------------------------------------------
-# CPU BOUND WITH SCHED_RR
+echo ----------------------------------------------------------------------------------5
+# CPU BOUND WITH SCHED_RR AND PRIORITY
+
+echo Calculating pi over $ITERATIONS iterations using SCHED_RR with 5 simultaneous process...
+/usr/bin/time -f "$TIMEFORMAT" sudo ./pi-sched $ITERATIONS SCHED_RR $FORKA $PRIORITY > /dev/null
+
+echo Calculating pi over $ITERATIONS iterations using SCHED_RR with 20 simultaneous process...
+/usr/bin/time -f "$TIMEFORMAT" sudo ./pi-sched $ITERATIONS SCHED_RR $FORKB $PRIORITY > /dev/null
+
+echo Calculating pi over $ITERATIONS iterations using SCHED_RR with 100 simultaneous process...
+/usr/bin/time -f "$TIMEFORMAT" sudo ./pi-sched $ITERATIONS SCHED_RR $FORKC $PRIORITY > /dev/null
+
+echo ----------------------------------------------------------------------------------6
+# CPU BOUND WITH SCHED_RR AND NO PRIORITY
 
 echo Calculating pi over $ITERATIONS iterations using SCHED_RR with 5 simultaneous process...
 /usr/bin/time -f "$TIMEFORMAT" sudo ./pi-sched $ITERATIONS SCHED_RR $FORKA > /dev/null
@@ -61,7 +101,7 @@ echo Calculating pi over $ITERATIONS iterations using SCHED_RR with 20 simultane
 echo Calculating pi over $ITERATIONS iterations using SCHED_RR with 100 simultaneous process...
 /usr/bin/time -f "$TIMEFORMAT" sudo ./pi-sched $ITERATIONS SCHED_RR $FORKC > /dev/null
 
-echo ---------------------------------------------------------------------------------------
+echo ----------------------------------------------------------------------------------6
 
 
 echo Copying $BYTESTOCOPY bytes in blocks of $BLOCKSIZE from rwinput to rwoutput

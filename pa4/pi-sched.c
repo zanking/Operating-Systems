@@ -81,9 +81,8 @@ int main(int argc, char* argv[]){
         printf("Not changing priority");
         niceness = 0;
       }
-
-      if argv !1
     }
+
 
     /* Set iterations if supplied */
     if(argc > 1){
@@ -92,7 +91,8 @@ int main(int argc, char* argv[]){
 	    fprintf(stderr, "Bad iterations value\n");
 	    exit(EXIT_FAILURE);
 	}
-    }
+}
+
     /* Set policy if supplied */
     if(argc > 2){
 	if(!strcmp(argv[2], "SCHED_OTHER")){
@@ -112,7 +112,7 @@ int main(int argc, char* argv[]){
       if ( fork() == 0 )
         {
           if (niceness == 1){
-            printf("niceness == 1")
+            printf("niceness == 1");
             niceNumb ++;
             int test = nice(niceNumb);
 //error handling
@@ -127,13 +127,13 @@ int main(int argc, char* argv[]){
 
 
         /* Set new scheduler policy */
-        fprintf(stdout, "Current Scheduling Policy: %d\n", sched_getscheduler(0));
-        fprintf(stdout, "Setting Scheduling Policy to: %d\n", policy);
+        // fprintf(stdout, "Current Scheduling Policy: %d\n", sched_getscheduler(0));
+        // fprintf(stdout, "Setting Scheduling Policy to: %d\n", policy);
         if(sched_setscheduler(0, policy, &param)){
-    	perror("Error setting scheduler policy");
-    	exit(EXIT_FAILURE);
+    	      perror("Error setting scheduler policy");
+    	      exit(EXIT_FAILURE);
         }
-        fprintf(stdout, "New Scheduling Policy: %d\n", sched_getscheduler(0));
+        // fprintf(stdout, "New Scheduling Policy: %d\n", sched_getscheduler(0));
 
         /* Calculate pi using statistical methode across all iterations*/
         for(i=0; i<iterations; i++){
