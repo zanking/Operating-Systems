@@ -26,12 +26,16 @@
 /* Local Defines */
 #define MAXFILENAMELENGTH 80
 #define DEFAULT_INPUTFILENAME "rwinput"
-#define DEFAULT_OUTPUTFILENAMEBASE "rwoutput"
+#define DEFAULT_OUTPUTFILENAMEBASE "/testOut/rwoutput"
 #define DEFAULT_BLOCKSIZE 1024
 #define DEFAULT_TRANSFERSIZE 1024*100
+#define FORKS 1
 
 int main(int argc, char* argv[]){
-
+    int testn;
+    int forks;
+    int niceness;
+    int niceNumb;
     int rv;
     int inputFD;
     int outputFD;
@@ -40,7 +44,7 @@ int main(int argc, char* argv[]){
     char outputFilenameBase[MAXFILENAMELENGTH];
 
     ssize_t transfersize = 0;
-    ssize_t blocksize = 0; 
+    ssize_t blocksize = 0;
     char* transferBuffer = NULL;
     ssize_t buffersize;
 
@@ -51,7 +55,7 @@ int main(int argc, char* argv[]){
     ssize_t totalBytesWritten = 0;
     int totalWrites = 0;
     int inputFileResets = 0;
-    
+
     /* Process program arguments to select run-time parameters */
     /* Set supplied transfer size or default if not supplied */
     if(argc < 2){
@@ -76,35 +80,69 @@ int main(int argc, char* argv[]){
 	}
     }
     /* Set supplied input filename or default if not supplied */
-    if(argc < 4){
-	if(strnlen(DEFAULT_INPUTFILENAME, MAXFILENAMELENGTH) >= MAXFILENAMELENGTH){
-	    fprintf(stderr, "Default input filename too long\n");
-	    exit(EXIT_FAILURE);
-	}
-	strncpy(inputFilename, DEFAULT_INPUTFILENAME, MAXFILENAMELENGTH);
-    }
-    else{
-	if(strnlen(argv[3], MAXFILENAMELENGTH) >= MAXFILENAMELENGTH){
-	    fprintf(stderr, "Input filename too long\n");
-	    exit(EXIT_FAILURE);
-	}
-	strncpy(inputFilename, argv[3], MAXFILENAMELENGTH);
-    }
+
     /* Set supplied output filename base or default if not supplied */
-    if(argc < 5){
-	if(strnlen(DEFAULT_OUTPUTFILENAMEBASE, MAXFILENAMELENGTH) >= MAXFILENAMELENGTH){
-	    fprintf(stderr, "Default output filename base too long\n");
-	    exit(EXIT_FAILURE);
-	}
-	strncpy(outputFilenameBase, DEFAULT_OUTPUTFILENAMEBASE, MAXFILENAMELENGTH);
+
+
+    if (argc < 4){
+      forks = FORKS;
+      printf("Using default number of forks\n");
     }
     else{
-	if(strnlen(argv[4], MAXFILENAMELENGTH) >= MAXFILENAMELENGTH){
-	    fprintf(stderr, "Output filename base is too long\n");
-	    exit(EXIT_FAILURE);
-	}
-	strncpy(outputFilenameBase, argv[4], MAXFILENAMELENGTH);
+      forks = atoi(argv[3]);
+    //  printf("Using user specified forks\n");
+      if(forks <= 1){
+        fprintf(stderr, "Bad fork value\n");
+        exit(EXIT_FAILURE);
+      }
     }
+
+    if (argc < 5){
+      niceness = 0;
+      printf("Not changing priority");
+    }
+    else{
+      niceness = atoi(argv[4]);
+      if (niceness != 1){
+        printf("Not changing priority");
+        niceness = 0;
+      }
+    }
+
+    if(argc < 6){
+	     if(strnlen(DEFAULT_INPUTFILENAME, MAXFILENAMELENGTH) >= MAXFILENAMELENGTH){
+	        fprintf(stderr, "Default input filename too long\n");
+	         exit(EXIT_FAILURE);
+	        }
+	     strncpy(inputFilename, DEFAULT_INPUTFILENAME, MAXFILENAMELENGTH);
+    }
+    else{
+	     if(strnlen(argv[5], MAXFILENAMELENGTH) >= MAXFILENAMELENGTH){
+	        fprintf(stderr, "Input filename too long\n");
+	         exit(EXIT_FAILURE);
+	        }
+	     strncpy(inputFilename, argv[3], MAXFILENAMELENGTH);
+    }
+
+  //   if(argc < 5){
+	// if(strnlen(DEFAULT_OUTPUTFILENAMEBASE, MAXFILENAMELENGTH) >= MAXFILENAMELENGTH){
+	//     fprintf(stderr, "Default output filename base too long\n");
+	//     exit(EXIT_FAILURE);
+	// }
+	// strncpy(outputFilenameBase, DEFAULT_OUTPUTFILENAMEBASE, MAXFILENAMELENGTH);
+  //   }
+
+
+  //   else{
+	// if(strnlen(argv[4], MAXFILENAMELENGTH) >= MAXFILENAMELENGTH){
+	//     fprintf(stderr, "Output filename base is too long\n");
+	//     exit(EXIT_FAILURE);
+	// }
+	// strncpy(outputFilenameBase, argv[4], MAXFILENAMELENGTH);
+  //   }
+
+
+
 
     /* Confirm blocksize is multiple of and less than transfersize*/
     if(blocksize > transfersize){
@@ -116,13 +154,31 @@ int main(int argc, char* argv[]){
 	exit(EXIT_FAILURE);
     }
 
+    //////////////////////////////////////////////////
+    //Fork here
+    for ( int i = 0; i < forks; i++ ){
+      if ( fork() == 0 )
+        {
+          if (niceness == 1){
+            printf("niceness == 1");
+            niceNumb ++;
+            testn ++;
+            int test = nice(niceNumb);
+              //error handling
+            if (test == -1){
+              fprintf(stderr, "Unable to change niceness\n");
+              exit(EXIT_FAILURE);
+            }
+          }
+
+    strncpy(outputFilename, DEFAULT_OUTPUTFILENAMEBASE, MAXFILENAMELENGTH);
     /* Allocate buffer space */
     buffersize = blocksize;
     if(!(transferBuffer = malloc(buffersize*sizeof(*transferBuffer)))){
 	perror("Failed to allocate transfer buffer");
 	exit(EXIT_FAILURE);
     }
-	
+
     /* Open Input File Descriptor in Read Only mode */
     if((inputFD = open(inputFilename, O_RDONLY | O_SYNC)) < 0){
 	perror("Failed to open input file");
@@ -131,7 +187,7 @@ int main(int argc, char* argv[]){
 
     /* Open Output File Descriptor in Write Only mode with standard permissions*/
     rv = snprintf(outputFilename, MAXFILENAMELENGTH, "%s-%d",
-		  outputFilenameBase, getpid());    
+		  outputFilenameBase, getpid());
     if(rv > MAXFILENAMELENGTH){
 	fprintf(stderr, "Output filenmae length exceeds limit of %d characters.\n",
 		MAXFILENAMELENGTH);
@@ -165,7 +221,7 @@ int main(int argc, char* argv[]){
 	    totalBytesRead += bytesRead;
 	    totalReads++;
 	}
-	
+
 	/* If all bytes were read, write to output file*/
 	if(bytesRead == blocksize){
 	    bytesWritten = write(outputFD, transferBuffer, bytesRead);
@@ -186,7 +242,7 @@ int main(int argc, char* argv[]){
 	    }
 	    inputFileResets++;
 	}
-	
+
     }while(totalBytesWritten < transfersize);
 
     /* Output some possibly helpfull info to make it seem like we were doing stuff */
@@ -198,7 +254,7 @@ int main(int argc, char* argv[]){
 	    (inputFileResets + 1), (inputFileResets ? "es" : ""));
     fprintf(stdout, "Processed %zd bytes in blocks of %zd bytes\n",
 	    transfersize, blocksize);
-	
+
     /* Free Buffer */
     free(transferBuffer);
 
@@ -213,6 +269,15 @@ int main(int argc, char* argv[]){
 	perror("Failed to close input file");
 	exit(EXIT_FAILURE);
     }
+
+      exit( 0 );
+    }
+  }
+
+  for ( int i = 0; i < forks; i++ ){
+      wait( NULL );
+  }
+
 
     return EXIT_SUCCESS;
 }
