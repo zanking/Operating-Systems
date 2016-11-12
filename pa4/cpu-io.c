@@ -23,6 +23,8 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sched.h>
+#include <math.h>
+
 
 /* Local Defines */
 #define MAXFILENAMELENGTH 80
@@ -31,6 +33,19 @@
 #define DEFAULT_BLOCKSIZE 1024
 #define DEFAULT_TRANSFERSIZE 1024*100
 #define FORKS 1
+/* for calc pi */
+#define DEFAULT_ITERATIONS 1000000
+#define RADIUS (RAND_MAX / 2)
+
+static double dist(double x0, double y0, double x1, double y1){
+    return sqrt(pow((x1-x0),2) + pow((y1-y0),2));
+}
+
+static double zeroDist(double x, double y){
+    return dist(0, 0, x, y);
+}
+
+
 
 int main(int argc, char* argv[]){
     int testn = 0;
@@ -99,27 +114,21 @@ int main(int argc, char* argv[]){
     /* add in scheduling policy*/
     if(argc < 5){
 	     policy = SCHED_OTHER;
-
-
     }
     else{
-      if(!strcmp(argv[4], "SCHED_OTHER")){
+      if(!strcmp(argv[2], "SCHED_OTHER")){
     	    policy = SCHED_OTHER;
-          //printf("schedule = SCHED_OTHER");
     	}
-    	else if(!strcmp(argv[4], "SCHED_FIFO")){
+    	else if(!strcmp(argv[2], "SCHED_FIFO")){
     	    policy = SCHED_FIFO;
-          // printf("schedule = SCHED_FIFO");
     	}
-    	else if(!strcmp(argv[4], "SCHED_RR")){
+    	else if(!strcmp(argv[2], "SCHED_RR")){
     	    policy = SCHED_RR;
-          // printf("schedule = SCHED_RR");
     	}
     }
-
     if (argc < 6){
       niceness = 0;
-      printf("Not changing priority");
+    //  printf("Not changing priority");
     }
     else{
       niceness = atoi(argv[5]);
@@ -129,7 +138,14 @@ int main(int argc, char* argv[]){
       }
     }
 
-    if(argc < 7){
+
+    if (argc < 7){
+      iterations = DEFAULT_ITERATIONS;
+    }
+
+
+
+    if(argc < 8){
 	     if(strnlen(DEFAULT_INPUTFILENAME, MAXFILENAMELENGTH) >= MAXFILENAMELENGTH){
 	        fprintf(stderr, "Default input filename too long\n");
 	         exit(EXIT_FAILURE);

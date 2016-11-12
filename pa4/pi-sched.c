@@ -22,7 +22,7 @@
 
 #define FORKS 1
 
-#define DEFAULT_ITERATIONS 1000000
+#define DEFAULT_ITERATIONS 100000000
 #define RADIUS (RAND_MAX / 2)
 
 static double dist(double x0, double y0, double x1, double y1){
@@ -32,6 +32,7 @@ static double dist(double x0, double y0, double x1, double y1){
 static double zeroDist(double x, double y){
     return dist(0, 0, x, y);
 }
+
 
 int main(int argc, char* argv[]){
 
