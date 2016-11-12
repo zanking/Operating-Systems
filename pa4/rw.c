@@ -59,7 +59,7 @@ int main(int argc, char* argv[]){
     /* Process program arguments to select run-time parameters */
     /* Set supplied transfer size or default if not supplied */
     if(argc < 2){
-	transfersize = DEFAULT_TRANSFERSIZE;
+	     transfersize = DEFAULT_TRANSFERSIZE;
     }
     else{
 	transfersize = atol(argv[1]);
@@ -73,12 +73,12 @@ int main(int argc, char* argv[]){
 	blocksize = DEFAULT_BLOCKSIZE;
     }
     else{
-	blocksize = atol(argv[2]);
-	if(blocksize < 1){
-	    fprintf(stderr, "Bad blocksize value\n");
-	    exit(EXIT_FAILURE);
-	}
-    }
+	     blocksize = atol(argv[2]);
+	      if(blocksize < 1){
+	         fprintf(stderr, "Bad blocksize value\n");
+	         exit(EXIT_FAILURE);
+	      }
+      }
     /* Set supplied input filename or default if not supplied */
 
     /* Set supplied output filename base or default if not supplied */
@@ -140,9 +140,6 @@ int main(int argc, char* argv[]){
 	// }
 	// strncpy(outputFilenameBase, argv[4], MAXFILENAMELENGTH);
   //   }
-
-
-
 
     /* Confirm blocksize is multiple of and less than transfersize*/
     if(blocksize > transfersize){
@@ -269,7 +266,7 @@ int main(int argc, char* argv[]){
 	perror("Failed to close input file");
 	exit(EXIT_FAILURE);
     }
-
+      printf('CHILD \n');
       exit( 0 );
     }
   }
@@ -277,7 +274,6 @@ int main(int argc, char* argv[]){
   for ( int i = 0; i < forks; i++ ){
       wait( NULL );
   }
-
 
     return EXIT_SUCCESS;
 }

@@ -24,8 +24,8 @@ echo Building code...
 $MAKE clean
 $MAKE
 
-echo ----------------------------------------------------------------------------------6
+echo ----------------------------------------------------------------------------------1
 
 echo Copying $BYTESTOCOPY bytes in blocks of $BLOCKSIZE from rwinput to rwoutput
 echo using SCHED_OTHER with 1 simultaneous process...
-/usr/bin/time -f "$TIMEFORMAT" ./rw $BYTESTOCOPY $BLOCKSIZE $FORKB > /dev/null
+/usr/bin/time -f "$TIMEFORMAT" ./rw $BYTESTOCOPY $BLOCKSIZE $FORKB
