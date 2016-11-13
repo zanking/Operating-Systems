@@ -93,12 +93,13 @@ Starting with the schedulers we have three possibilities, followed by three diff
 
 ### Results:
 
+My primary focus was on each of the scheduling processes and how they preform on I/O, CPU, and mixed processes.  The following graphs show each of the different scheduling processes and their corresponding wall times as well as the number of processes ran.
 
 #### CPU Bound
-[Imgur](http://i.imgur.com/QboWjDV.png)
+![alt text](http://i.imgur.com/QboWjDV.png)
 
 #### I/O Bound
-[Imgur](http://i.imgur.com/HEtBQ1P.png)
+![alt text](http://i.imgur.com/HEtBQ1P.png)
 #### Mixed Bound
 
-[Imgur](http://i.imgur.com/fKT5CRC.png)
+![alt text](http://i.imgur.com/fKT5CRC.png)
