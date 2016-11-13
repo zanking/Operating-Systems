@@ -3,6 +3,7 @@
 
 ## CSCI 3753 Operating Systems Fall 2016
 
+
 ## Assignment Four
 
 
@@ -89,3 +90,15 @@ Along with the base benchmark tests, I included priority.  When testing priority
 Starting with the schedulers we have three possibilities, followed by three different benchmark cases, followed by three different numbers of processes, followed by two different priorities.
 
 3*3*3*2 = 54
+
+### Results:
+
+
+#### CPU Bound
+[Imgur](http://i.imgur.com/QboWjDV.png)
+
+#### I/O Bound
+[Imgur](http://i.imgur.com/HEtBQ1P.png)
+#### Mixed Bound
+
+[Imgur](http://i.imgur.com/fKT5CRC.png)
