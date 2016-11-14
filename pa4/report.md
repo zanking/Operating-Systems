@@ -96,7 +96,36 @@ Starting with the schedulers we have three possibilities, followed by three diff
 My primary focus was on each of the scheduling processes and how they preform on I/O, CPU, and mixed processes.  The following graphs show each of the different scheduling processes and their corresponding wall times as well as the number of processes ran.
 
 #### CPU Bound
+
+| CPU      |             |                     |        |              |               |           |                   |                 |
+|----------|-------------|---------------------|--------|--------------|---------------|-----------|-------------------|-----------------|
+| Priority | Scheduler   | Number of Processes | wall   | user         | system        | CPU Usage | iswitched         | v-switched      |
+| TRUE     | SCHED_OTHER | 5                   | 9.19   | user=18.28   | system=0.02   | CPU=199%  | i-switched=2670   |  v-switched=14  |
+| TRUE     | SCHED_OTHER | 20                  | 36.65  | user=73.05   |  system=0.08  | CPU=199%  | i-switched=17962  |   v-switched=44 |
+| TRUE     | SCHED_OTHER | 100                 | 189.2  | user=371.94  | system=1.03   | CPU=197%  | i-switched=98692  |  v-switched=204 |
+| FALSE    | SCHED_OTHER | 5                   | 9.21   | user=18.27   | system=0.01   | CPU=198%  | i-switched=2741   | v-switched=13   |
+| FALSE    | SCHED_OTHER | 20                  | 37.16  | user=73.82   | system=0.03   | CPU=198%  |  i-switched=18594 |  v-switched=43  |
+| FALSE    | SCHED_OTHER | 100                 | 185.82 | user=369.10  | system=0.33   | CPU=198%  | i-switched=93078  | v-switched=203  |
+|          |             |                     |        |              |               |           |                   |                 |
+| TRUE     | SCHED_FIFO  | 5                   | 11.43  | user=18.51   | system=0.00   |  CPU=161% | i-switched=26     |  v-switched=12  |
+| TRUE     | SCHED_FIFO  | 20                  | 38.78  | user=73.88   | system=0.01   |  CPU=190% |  i-switched=115   | v-switched=35   |
+| TRUE     | SCHED_FIFO  | 100                 | 194.52 | user=369.84  | system=0.07   | CPU=190%  |  i-switched=593   | v-switched=163  |
+| FALSE    | SCHED_FIFO  | 5                   | 11.47  | user=18.49   |  system=0.00  | CPU=161%  | i-switched=25     | v-switched=12   |
+| FALSE    | SCHED_FIFO  | 20                  | 39.24  |  user=74.24  | system=0.01   | CPU=189%  | i-switched=98     | v-switched=36   |
+| FALSE    | SCHED_FIFO  | 100                 | 195.23 | user=371.22  |  system=0.09  | CPU=190%  | i-switched=497    | v-switched=163  |
+|          |             |                     |        |              |               |           |                   |                 |
+| TRUE     | SCHED_RR    | 5                   | 10     | user=18.62   | system=0.00   | CPU=186%  | i-switched=97     |  v-switched=14  |
+| TRUE     | SCHED_RR    | 20                  | 39.04  | user=74.30   | system=0.02   | CPU=190%  | i-switched=813    |  v-switched=27  |
+| TRUE     | SCHED_RR    | 100                 | 194.74 | user=370.44  | system=0.09   | CPU=190%  |  i-switched=4105  | v-switched=123  |
+| FALSE    | SCHED_RR    | 5                   | 10.15  | user=18.72   | system=0.00   | CPU=184%  | i-switched=112    | v-switched=13   |
+| FALSE    | SCHED_RR    | 20                  | 39.04  | user=74.31   |  system=0.01  |  CPU=190% |  i-switched=722   | v-switched=35   |
+| FALSE    | SCHED_RR    | 100                 | 196.36 | user=373.56  | system=0.08   | CPU=190%  | i-switched=4038   | v-switched=124  |
+
 ![alt text](http://i.imgur.com/QboWjDV.png)
+
+From the data collected we can see that most efficient scheduler for CPU bound processes was the CFS (other) with priority.  We can also infer that priority had minimal effect on the wall times across all schedulers.  Each scheduler scales linearly across the different number of processes.  
+
+We can see that the FIFO scheduler had the least number of context switches, as well as the lowest CPU usage.  The CFS scheduler ran with the shortest wall time out of all the schedulers, it however had a non-linear number of i-switched with a final number of nearly 99,000 when using priority.  I-switched represents involuntary context switches, meaning that a process was preempted out of its execution time.  Context switches are very resource demanding, so this non-linear scaling of context switches is something to take note of.
 
 #### I/O Bound
 ![alt text](http://i.imgur.com/HEtBQ1P.png)
