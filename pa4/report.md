@@ -97,6 +97,32 @@ My primary focus was on each of the scheduling processes and how they preform on
 
 #### CPU Bound
 
+
+
+![alt text](http://i.imgur.com/QboWjDV.png)
+
+From the data collected we can see that most efficient scheduler for CPU bound processes was the CFS (other) with priority.  We can also infer that priority had minimal effect on the wall times across all schedulers.  Each scheduler scales linearly across the different number of processes.  
+
+We can see that the FIFO scheduler had the least number of context switches, as well as the lowest CPU usage.  The CFS scheduler ran with the shortest wall time out of all the schedulers, it however had a non-linear number of i-switched with a final number of nearly 99,000 when using priority.  I-switched represents involuntary context switches, meaning that a process was preempted out of its execution time.  Context switches are very resource demanding, so this non-linear scaling of context switches is something to take note of.
+
+See the CPU chart in the data section for context switch results.
+
+#### I/O Bound
+![alt text](http://i.imgur.com/HEtBQ1P.png)
+
+Immediatly we can notice the drastic change in runtime between CPU bound and I/O bound processes.  This is to be expected when putting the CPU through millions of iterations of calculations in comparison to transferring several bytes of data from one file to another.
+
+CFS with priority was the fastest wall time out of all the schedulers.  Priority had a large effect on the CFS scheduler, CFS without priorty was the slowest in the group while CFS with priority was the fastest.  This demonstrates the necessity of priority for the CFS when dealing with I/O bound processes, and also shows that it is extremley I/O efficient when priority is involved.
+#### Mixed Bound
+
+![alt text](http://i.imgur.com/fKT5CRC.png)
+
+
+
+
+
+## Data
+
 | CPU      |             |                     |        |              |               |           |                   |                 |
 |----------|-------------|---------------------|--------|--------------|---------------|-----------|-------------------|-----------------|
 | Priority | Scheduler   | Number of Processes | wall   | user         | system        | CPU Usage | iswitched         | v-switched      |
@@ -120,15 +146,3 @@ My primary focus was on each of the scheduling processes and how they preform on
 | FALSE    | SCHED_RR    | 5                   | 10.15  | user=18.72   | system=0.00   | CPU=184%  | i-switched=112    | v-switched=13   |
 | FALSE    | SCHED_RR    | 20                  | 39.04  | user=74.31   |  system=0.01  |  CPU=190% |  i-switched=722   | v-switched=35   |
 | FALSE    | SCHED_RR    | 100                 | 196.36 | user=373.56  | system=0.08   | CPU=190%  | i-switched=4038   | v-switched=124  |
-
-![alt text](http://i.imgur.com/QboWjDV.png)
-
-From the data collected we can see that most efficient scheduler for CPU bound processes was the CFS (other) with priority.  We can also infer that priority had minimal effect on the wall times across all schedulers.  Each scheduler scales linearly across the different number of processes.  
-
-We can see that the FIFO scheduler had the least number of context switches, as well as the lowest CPU usage.  The CFS scheduler ran with the shortest wall time out of all the schedulers, it however had a non-linear number of i-switched with a final number of nearly 99,000 when using priority.  I-switched represents involuntary context switches, meaning that a process was preempted out of its execution time.  Context switches are very resource demanding, so this non-linear scaling of context switches is something to take note of.
-
-#### I/O Bound
-![alt text](http://i.imgur.com/HEtBQ1P.png)
-#### Mixed Bound
-
-![alt text](http://i.imgur.com/fKT5CRC.png)
