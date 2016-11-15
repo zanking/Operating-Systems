@@ -1,31 +1,31 @@
 
 #            Nicholas Clement
 
-## CSCI 3753 Operating Systems Fall 2016
+# CSCI 3753 Operating Systems Fall 2016
 
 
 ## Assignment Four
 
 
-### Abstract:
+## Abstract:
 
-The goal of this lab is to analyze the different runtimes and efficiencies of schedulers with different types of processes.  The different schedulers examined were the CFS, Round Robin, and First in First Out.  The different processes examined were CPU intensive, I/O intensive, and a combination of both CPU and I/O intensive tasks.  All of these were then tested with changing priority (otherwise referred to as niceness) and static priority.  The general results showed that CPU bound processes were much more expensive and time consuming compared to I/O processes for each scheduler.  In general, I/O was by far the least time consuming and mixed I/O CPU tests were less time consuming that pure CPU test but more time consuming than pure I/O tests.
+The goal of this lab is to analyze the different runtimes and efficiencies of schedulers with different types of processes.  The different schedulers examined were CFS, Round Robin, and First in First Out.  The different processes examined were CPU intensive, I/O intensive, and a combination of both CPU and I/O intensive tasks.  All of these were then tested with changing priority (otherwise referred to as niceness) and static priority.  The general results showed that CPU bound processes were much more expensive and time consuming compared to I/O processes for each scheduler.  In general, I/O was by far the least time consuming and mixed I/O CPU tests were less time consuming that pure CPU test but more time consuming than pure I/O tests.
 
 
 
-### Introduction:
+## Introduction:
 
 The purpose of this assignment is to investigate the behavior of different scheduling algorithms.  To do this I was tasked with creating different testing benchmarks, all of which I ran with the different scheduling algorithms assigned.  From these different benchmark tests I was able to conclude the corresponding efficiencies for each scheduling algorithm, and the pitfalls associated with that algorithm.
 
-### Method (Experimental Design):
+## Method (Experimental Design):
 
 A total of fifty-four tests were preformed to accumulate data on the different scheduling algorithms and their corresponding efficiencies.  These tests were systematically divided into several subcategories including scheduler, priority, structure, and scheduling process.
 
-##### Variable One: Schedulers
+### Variable One: Schedulers
 
 The goal of this lab is to investigate three different Unix scheduling algorithms and weigh the pros and cons of each scheduling algorithm.  Therefore this is the primary and first variable I was interested in testing with my different test cases.  
 
-##### Variable Two: Benchmarks
+### Variable Two: Benchmarks
 
 I used three different structures of programs as benchmarks for the tests.  These structures included I/O bound programs (reading/writing), CPU bound programs (computation), and a mix of I/O and CPU bound programs.  These different base tests allowed me to analyze each scheduler and its performance for the basic necessities of computing.  
 
@@ -65,12 +65,12 @@ The CPU-I/O mixed program first ran the statistical computation of pi over one h
 
 Creating these different benchmark tests allowed me to further investigate how the three CPU schedulers handle different types of processes.
 
-##### Variable Three: Number of Processes
+### Variable Three: Number of Processes
 
 I ran each benchmark test with a different number of child processes using the fork() systemcall.  The different numbers of processes I used were five, twenty, and one hundred.  My goal in changing the number of processes for each benchmark test was to see the scalability of the different schedulers.  In the results section I will discuss in more detail the behavior that is required for a scheduling algorithm to scale well.
 
 
-##### Variable Four: Priority
+### Variable Four: Priority
 
 Along with the base benchmark tests, I included priority.  When testing priority I analyzed static priority, and dynamic priority.  Static priority consisted of each process preforming the same task with the same priority.  When implementing dynamic priority I used the nice() systemcall to decrement the priority of each child process. The code is as follows:
 
@@ -85,17 +85,17 @@ Along with the base benchmark tests, I included priority.  When testing priority
       }
     }
 
-##### Overview
+### Overview
 
 Starting with the schedulers we have three possibilities, followed by three different benchmark cases, followed by three different numbers of processes, followed by two different priorities.
 
-3*3*3*2 = 54
+3 x 3 x 3 x 2 = 54
 
-### Results:
+## Results and Analysis:
 
 My primary focus was on each of the scheduling processes and how they preform on I/O, CPU, and mixed processes.  The following graphs show each of the different scheduling processes and their corresponding wall times as well as the number of processes ran.
 
-#### CPU Bound
+### CPU Bound
 
 
 
@@ -107,7 +107,7 @@ We can see that the FIFO scheduler had the least number of context switches, as 
 
 See the CPU chart in the data section for context switch results.
 
-#### I/O Bound
+### I/O Bound
 ![alt text](http://i.imgur.com/HEtBQ1P.png)
 
 Immediatly we can notice the drastic change in runtime between CPU bound and I/O bound processes.  This is to be expected when putting the CPU through millions of iterations of calculations in comparison to transferring several bytes of data from one file to another.
@@ -115,12 +115,33 @@ Immediatly we can notice the drastic change in runtime between CPU bound and I/O
 CFS with priority was the fastest wall time out of all the schedulers.  Priority had a large effect on the CFS scheduler, CFS without priorty was the slowest in the group while CFS with priority was the fastest.  This demonstrates the necessity of priority for the CFS when dealing with I/O bound processes, and also shows that it is extremley I/O efficient when priority is involved.
 
 
-#### Mixed Bound
+### Mixed Bound
 
 ![alt text](http://i.imgur.com/fKT5CRC.png)
 
 
+In my CPU-I/O mixed test I found that FIFO without priority had the fastest execution time out of all of the scheduling algorithms.  It can also be seen in my data that this scheduling method had the highest CPU utilization out of all of the schedulers, with 193% for mixed CPU-I/O processes.  This was the key to the minimal wall time, perhaps with more trials the order of processes wouldn’t line up as well as they did for the FIFO scheduler.
 
+When comparing FIFO without priority to FIFO with priority, there was nearly a 20 second gap in performance (wall) and a 4,000 voluntary context switch gap between the two.  This shows us that in a situation with mixed I/O FIFO without priority will likely outperform FIFO with priority, with more context switches comes a greater overhead as reflected in the execution time of FIFO with priority.
+
+In contrast priority had little effect on the CFS and Round Robin, both of these schedulers didn’t deviate more than 500 context switches with or without priority.  This leads me to believe that CFS and Round Robin although not as fast as FIFO in this case are reliable, and natural more fair than an algorithm like FIFO.  CFS did outperform the Round Robin in this final test with an average of about 8 seconds faster wall time.
+
+
+
+## Conclusion:
+
+
+
+The method I used to change priority changes the nice value of the current process.  The nice() systemcall changes the priority in the user space, not the kernel space.  This is something to take into account when observing my results, and may contribute to the minimal difference between the schedulers without priority and the schedulers with priority.
+
+After running each benchmark test with a different number of processes and priority, I can now see that although the CFS is not always the best preforming, it is reliable and consistent.  SCHED_RR and SCHED_FIFO are referred to as "real-time" policies.  Tasks with these policies preempt all other processes and so starvation is more common in these than in SCHED_OTHER.  SCHED_RR is Round Robin (preemptive) while FIFO (First in First Out) needs the executing task to yield the processor.  For this reason even though FIFO had some of the better numbers in my data, it is unreliable and unrealistic to schedule an entire system with FIFO.  CFS is the best scheduling algorithm, with its self balancing nature it ensures that no processes gets starved while still implementing priority.
+
+## References:
+http://stackoverflow.com -> Different scheduling policies
+
+http://www.tutorialspoint.com/unix_system_calls/nice.htm -> nice() systemcall
+
+http://www.linuxforums.org/forum/ -> Linux information
 
 
 ## Appendix A: Data
