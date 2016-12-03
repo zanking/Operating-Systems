@@ -11,6 +11,8 @@ Nicholas Clement
         more complete implementation may wish to add fi->fh support to minimize
         open() and close() calls and support fh dependent functions.
 */
+//fusermount -u example to mount or unmount
+//fusermount -u example
 
 #define FUSE_USE_VERSION 28
 #define HAVE_SETXATTR
@@ -41,7 +43,7 @@ Nicholas Clement
 typedef struct{
 	char * directory;
 	char * key;
-}encryptParameters
+}encryptParameters;
 
 /*function that returns path of directory
 accesses private struct to get the directory*/
@@ -54,8 +56,9 @@ char* get_path(const char *path) {
 	return ret;
 }
 
-static int xmp_getattr(const char *path, struct stat *stbuf)
+static int xmp_getattr(const char *tpath, struct stat *stbuf)
 {
+	char * path = get_path(tpath);
 	int res;
 
 	res = lstat(path, stbuf);
@@ -65,8 +68,9 @@ static int xmp_getattr(const char *path, struct stat *stbuf)
 	return 0;
 }
 
-static int xmp_access(const char *path, int mask)
+static int xmp_access(const char *tpath, int mask)
 {
+	char * path = get_path(tpath);
 	int res;
 
 	res = access(path, mask);
@@ -76,8 +80,9 @@ static int xmp_access(const char *path, int mask)
 	return 0;
 }
 
-static int xmp_readlink(const char *path, char *buf, size_t size)
+static int xmp_readlink(const char *tpath, char *buf, size_t size)
 {
+	char * path = get_path(tpath);
 	int res;
 
 	res = readlink(path, buf, size - 1);
@@ -89,9 +94,10 @@ static int xmp_readlink(const char *path, char *buf, size_t size)
 }
 
 
-static int xmp_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
+static int xmp_readdir(const char *tpath, void *buf, fuse_fill_dir_t filler,
 		       off_t offset, struct fuse_file_info *fi)
 {
+	char * path = get_path(tpath);
 	DIR *dp;
 	struct dirent *de;
 
@@ -115,8 +121,9 @@ static int xmp_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 	return 0;
 }
 
-static int xmp_mknod(const char *path, mode_t mode, dev_t rdev)
+static int xmp_mknod(const char *tpath, mode_t mode, dev_t rdev)
 {
+	char * path = get_path(tpath);
 	int res;
 
 	/* On Linux this could just be 'mknod(path, mode, rdev)' but this
@@ -135,8 +142,9 @@ static int xmp_mknod(const char *path, mode_t mode, dev_t rdev)
 	return 0;
 }
 
-static int xmp_mkdir(const char *path, mode_t mode)
+static int xmp_mkdir(const char *tpath, mode_t mode)
 {
+	char * path = get_path(tpath);
 	int res;
 
 	res = mkdir(path, mode);
@@ -146,8 +154,9 @@ static int xmp_mkdir(const char *path, mode_t mode)
 	return 0;
 }
 
-static int xmp_unlink(const char *path)
+static int xmp_unlink(const char *tpath)
 {
+	char * path = get_path(tpath);
 	int res;
 
 	res = unlink(path);
@@ -157,8 +166,9 @@ static int xmp_unlink(const char *path)
 	return 0;
 }
 
-static int xmp_rmdir(const char *path)
+static int xmp_rmdir(const char *tpath)
 {
+	char * path = get_path(tpath);
 	int res;
 
 	res = rmdir(path);
@@ -192,6 +202,7 @@ static int xmp_rename(const char *from, const char *to)
 
 static int xmp_link(const char *from, const char *to)
 {
+
 	int res;
 
 	res = link(from, to);
@@ -201,8 +212,9 @@ static int xmp_link(const char *from, const char *to)
 	return 0;
 }
 
-static int xmp_chmod(const char *path, mode_t mode)
+static int xmp_chmod(const char *tpath, mode_t mode)
 {
+	char * path = get_path(tpath);
 	int res;
 
 	res = chmod(path, mode);
@@ -212,8 +224,9 @@ static int xmp_chmod(const char *path, mode_t mode)
 	return 0;
 }
 
-static int xmp_chown(const char *path, uid_t uid, gid_t gid)
+static int xmp_chown(const char *tpath, uid_t uid, gid_t gid)
 {
+	char * path = get_path(tpath);
 	int res;
 
 	res = lchown(path, uid, gid);
@@ -223,8 +236,9 @@ static int xmp_chown(const char *path, uid_t uid, gid_t gid)
 	return 0;
 }
 
-static int xmp_truncate(const char *path, off_t size)
+static int xmp_truncate(const char *tpath, off_t size)
 {
+	char * path = get_path(tpath);
 	int res;
 
 	res = truncate(path, size);
@@ -234,8 +248,9 @@ static int xmp_truncate(const char *path, off_t size)
 	return 0;
 }
 
-static int xmp_utimens(const char *path, const struct timespec ts[2])
+static int xmp_utimens(const char *tpath, const struct timespec ts[2])
 {
+	char * path = get_path(tpath);
 	int res;
 	struct timeval tv[2];
 
@@ -251,8 +266,9 @@ static int xmp_utimens(const char *path, const struct timespec ts[2])
 	return 0;
 }
 
-static int xmp_open(const char *path, struct fuse_file_info *fi)
+static int xmp_open(const char *tpath, struct fuse_file_info *fi)
 {
+	char * path = get_path(tpath);
 	int res;
 
 	res = open(path, fi->flags);
@@ -263,9 +279,10 @@ static int xmp_open(const char *path, struct fuse_file_info *fi)
 	return 0;
 }
 
-static int xmp_read(const char *path, char *buf, size_t size, off_t offset,
+static int xmp_read(const char *tpath, char *buf, size_t size, off_t offset,
 		    struct fuse_file_info *fi)
 {
+	char * path = get_path(tpath);
 	int fd;
 	int res;
 
@@ -282,9 +299,10 @@ static int xmp_read(const char *path, char *buf, size_t size, off_t offset,
 	return res;
 }
 
-static int xmp_write(const char *path, const char *buf, size_t size,
+static int xmp_write(const char *tpath, const char *buf, size_t size,
 		     off_t offset, struct fuse_file_info *fi)
 {
+	char * path = get_path(tpath);
 	int fd;
 	int res;
 
@@ -301,8 +319,9 @@ static int xmp_write(const char *path, const char *buf, size_t size,
 	return res;
 }
 
-static int xmp_statfs(const char *path, struct statvfs *stbuf)
+static int xmp_statfs(const char *tpath, struct statvfs *stbuf)
 {
+	char * path = get_path(tpath);
 	int res;
 
 	res = statvfs(path, stbuf);
@@ -312,9 +331,10 @@ static int xmp_statfs(const char *path, struct statvfs *stbuf)
 	return 0;
 }
 
-static int xmp_create(const char* path, mode_t mode, struct fuse_file_info* fi) {
+static int xmp_create(const char* tpath, mode_t mode, struct fuse_file_info* fi) {
 
     (void) fi;
+		char * path = get_path(tpath);
 
     int res;
     res = creat(path, mode);
@@ -327,21 +347,22 @@ static int xmp_create(const char* path, mode_t mode, struct fuse_file_info* fi) 
 }
 
 
-static int xmp_release(const char *path, struct fuse_file_info *fi)
+static int xmp_release(const char *tpath, struct fuse_file_info *fi)
 {
 	/* Just a stub.	 This method is optional and can safely be left
 	   unimplemented */
-
+	char * path = get_path(tpath);
 	(void) path;
 	(void) fi;
 	return 0;
 }
 
-static int xmp_fsync(const char *path, int isdatasync,
+static int xmp_fsync(const char *tpath, int isdatasync,
 		     struct fuse_file_info *fi)
 {
 	/* Just a stub.	 This method is optional and can safely be left
 	   unimplemented */
+	char * path = get_path(tpath);
 
 	(void) path;
 	(void) isdatasync;
@@ -350,18 +371,20 @@ static int xmp_fsync(const char *path, int isdatasync,
 }
 
 #ifdef HAVE_SETXATTR
-static int xmp_setxattr(const char *path, const char *name, const char *value,
+static int xmp_setxattr(const char *tpath, const char *name, const char *value,
 			size_t size, int flags)
 {
+	char * path = get_path(tpath);
 	int res = lsetxattr(path, name, value, size, flags);
 	if (res == -1)
 		return -errno;
 	return 0;
 }
 
-static int xmp_getxattr(const char *path, const char *name, char *value,
+static int xmp_getxattr(const char *tpath, const char *name, char *value,
 			size_t size)
 {
+		char * path = get_path(tpath);
 	int res = lgetxattr(path, name, value, size);
 	if (res == -1)
 		return -errno;
@@ -370,7 +393,7 @@ static int xmp_getxattr(const char *path, const char *name, char *value,
 
 static int xmp_listxattr(const char *tpath, char *list, size_t size)
 {
-	char * path
+	char * path = get_path(tpath);
 	int res = llistxattr(path, list, size);
 	if (res == -1)
 		return -errno;
@@ -379,7 +402,7 @@ static int xmp_listxattr(const char *tpath, char *list, size_t size)
 
 static int xmp_removexattr(const char *tpath, const char *name)
 {
-	char * path = realpath()
+	char * path = get_path(tpath);
 	int res = lremovexattr(path, name);
 	if (res == -1)
 		return -errno;
@@ -428,10 +451,10 @@ int main(int argc, char *argv[])
 	 }
 	//  use our encryptParamter struct
 	 encryptParameters *data = NULL;
-	 data = malloc(sizeof(encryptParameters))
+	 data = malloc(sizeof(encryptParameters));
 
 	 if (data == NULL){ //check to make sure data exists
-		 printf("Error allocating ")
+		 printf("Error allocating ");
 	 }
 
 	 data-> directory = realpath(argv[argc-2], NULL);
@@ -441,7 +464,7 @@ int main(int argc, char *argv[])
 	 argv[3] = NULL;
 	 argv[2] = NULL;
 
-	 argc-2;
+	 argc = argc-2;
 
 
 	return fuse_main(argc, argv, &xmp_oper, data);
