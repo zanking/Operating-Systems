@@ -36,12 +36,23 @@ Nicholas Clement
 #include <sys/xattr.h>
 #endif
 
-#define EN_PARAMS ((encryptParams*) fuse_get_context()->private_data)
+#define EN_PARAMS ((encryptParameters*) fuse_get_context()->private_data)
 
 typedef struct{
 	char * directory;
 	char * key;
 }encryptParameters
+
+/*function that returns path of directory
+accesses private struct to get the directory*/
+
+char* get_path(const char *path) {
+	int len = strlen(path) + strlen(EN_PARAMS->directory) + 1;
+	char* ret = malloc(sizeof(char) * len);
+	strcpy(ret, EN_PARAMS->directory);
+	strcat(ret, path);
+	return ret;
+}
 
 static int xmp_getattr(const char *path, struct stat *stbuf)
 {
@@ -357,16 +368,18 @@ static int xmp_getxattr(const char *path, const char *name, char *value,
 	return res;
 }
 
-static int xmp_listxattr(const char *path, char *list, size_t size)
+static int xmp_listxattr(const char *tpath, char *list, size_t size)
 {
+	char * path
 	int res = llistxattr(path, list, size);
 	if (res == -1)
 		return -errno;
 	return res;
 }
 
-static int xmp_removexattr(const char *path, const char *name)
+static int xmp_removexattr(const char *tpath, const char *name)
 {
+	char * path = realpath()
 	int res = lremovexattr(path, name);
 	if (res == -1)
 		return -errno;
@@ -416,17 +429,20 @@ int main(int argc, char *argv[])
 	//  use our encryptParamter struct
 	 encryptParameters *data = NULL;
 	 data = malloc(sizeof(encryptParameters))
-//realpath
-	 if (data == NULL){
+
+	 if (data == NULL){ //check to make sure data exists
 		 printf("Error allocating ")
 	 }
 
 	 data-> directory = realpath(argv[argc-2], NULL);
+	 data -> key = argv[1];
+	// encryptParameters -> directory = argv[2];
+	 argv[1] = argv[3];
+	 argv[3] = NULL;
+	 argv[2] = NULL;
 
-	 argv[argc-2] = argv[argc-1];
-	 argv[argc-1] = NULL;
-	 argc--;
+	 argc-2;
 
 
-	return fuse_main(argc, argv, &xmp_oper, NULL);
+	return fuse_main(argc, argv, &xmp_oper, data);
 }
