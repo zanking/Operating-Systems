@@ -36,13 +36,12 @@ Nicholas Clement
 #include <sys/xattr.h>
 #endif
 
-
+#define EN_PARAMS ((encryptParams*) fuse_get_context()->private_data)
 
 typedef struct{
 	char * directory;
 	char * key;
-
-}EncryptParameters
+}encryptParameters
 
 static int xmp_getattr(const char *path, struct stat *stbuf)
 {
@@ -409,34 +408,25 @@ static struct fuse_operations xmp_oper = {
 int main(int argc, char *argv[])
 {
 	umask(0);
-	if ( argc != 2 ) /* argc should be 2 for correct execution */
+	if ( argc <= 4 ) /* argc should be 4 for correct execution */
 	 {
-			 /* We print argv[0] assuming it is the program name */
+
 			 printf( "not enough arguments" );
 	 }
-	 else
-	 {
-			 // We assume argv[1] is directory
-			 FILE *file = fopen( argv[1], "r" );
-
-			 /* fopen returns 0, the NULL pointer, on failure */
-			 if ( file == 0 )
-			 {
-					 printf( "Could not open file\n" );
-			 }
-			 else
-			 {
-					 int x;
-					 /* read one character at a time from file, stopping at EOF, which
-							indicates the end of the file.  Note that the idiom of "assign
-							to a variable, check the value" used below works because
-							the assignment statement evaluates to the value assigned. */
-					 while  ( ( x = fgetc( file ) ) != EOF )
-					 {
-							 printf( "%c", x );
-					 }
-					 fclose( file );
-			 }
+	//  use our encryptParamter struct
+	 encryptParameters *data = NULL;
+	 data = malloc(sizeof(encryptParameters))
+//realpath
+	 if (data == NULL){
+		 printf("Error allocating ")
 	 }
+
+	 data-> directory = realpath(argv[argc-2], NULL);
+
+	 argv[argc-2] = argv[argc-1];
+	 argv[argc-1] = NULL;
+	 argc--;
+
+
 	return fuse_main(argc, argv, &xmp_oper, NULL);
 }
