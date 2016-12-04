@@ -370,6 +370,13 @@ static int xmp_fsync(const char *tpath, int isdatasync,
 	return 0;
 }
 
+//add encryption attribute to file
+// void addEncryptAttrib(const char *path){
+// 	int temp;
+// 	int attributeReturn = setxattr(path, "user.enc","true", (sizeof(char)*5), 0);
+//
+// }
+
 #ifdef HAVE_SETXATTR
 static int xmp_setxattr(const char *tpath, const char *name, const char *value,
 			size_t size, int flags)
@@ -449,6 +456,10 @@ int main(int argc, char *argv[])
 
 			 printf( "not enough arguments" );
 	 }
+
+	 //check to see if the file is encrypted
+	 int isEncrypted =  xmp_getxattr(data->directory, "enc", 1,
+	 			size_t siz)
 	//  use our encryptParamter struct
 	 encryptParameters *data = NULL;
 	 data = malloc(sizeof(encryptParameters));
@@ -456,6 +467,8 @@ int main(int argc, char *argv[])
 	 if (data == NULL){ //check to make sure data exists
 		 printf("Error allocating ");
 	 }
+
+
 
 	 data-> directory = realpath(argv[argc-2], NULL);
 	 data -> key = argv[1];
