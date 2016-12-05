@@ -17,6 +17,12 @@ Nicholas Clement
 #define FUSE_USE_VERSION 28
 #define HAVE_SETXATTR
 
+/* Add namespace defintion for older kernels. Normally included in linux/xattr.h */
+#ifndef XATTR_USER_PREFIX
+#define XATTR_USER_PREFIX "user."
+#define XATTR_USER_PREFIX_LEN (sizeof (XATTR_USER_PREFIX) - 1)
+#endif
+
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -27,6 +33,7 @@ Nicholas Clement
 #endif
 
 #include <fuse.h>
+#include "aes-crypt.h"
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
@@ -282,41 +289,126 @@ static int xmp_open(const char *tpath, struct fuse_file_info *fi)
 static int xmp_read(const char *tpath, char *buf, size_t size, off_t offset,
 		    struct fuse_file_info *fi)
 {
-	char * path = get_path(tpath);
 	int fd;
 	int res;
+    ssize_t sizes;
+    FILE *fp, *tmp;
 
-	(void) fi;
-	fd = open(path, O_RDONLY);
-	if (fd == -1)
-		return -errno;
+    char *fullpath = get_path(tpath);
 
-	res = pread(fd, buf, size, offset);
-	if (res == -1)
-		res = -errno;
+    (void) fi;
+		//handle encryption
+    sizes = checkEncrypted(fullpath);
+    if (sizes == 1) {
+        char* tmppath;
+        tmppath = malloc(sizeof(char)*(strlen(fullpath) + strlen(".temp") + 1));
+        tmppath[0] = '\0';
+        strcat(tmppath, fullpath);
+        strcat(tmppath, ".temp");
 
-	close(fd);
+        tmp = fopen(tmppath, "wb+");
+        fp = fopen(fullpath, "rb");
+
+        do_crypt(fp, tmp, 0, EN_PARAMS->key);
+
+        fseek(tmp, 0, SEEK_END);
+        size_t len = ftell(tmp);
+        fseek(tmp, 0, SEEK_SET);
+
+        res = fread(buf, 1, len, tmp);
+        if (res == -1)
+            return -errno;
+
+        fclose(fp);
+        fclose(tmp);
+        remove(tmppath);
+    }
+		//handle the case of the file not being encrypted
+    else {
+	    fd = open(fullpath, O_RDONLY);
+	    if (fd == -1)
+		    return -errno;
+
+        res = pread(fd, buf, size, offset);
+	    if (res == -1)
+		    res = -errno;
+
+    	close(fd);
+    }
+
 	return res;
 }
+
 
 static int xmp_write(const char *tpath, const char *buf, size_t size,
 		     off_t offset, struct fuse_file_info *fi)
 {
-	char * path = get_path(tpath);
 	int fd;
 	int res;
+    ssize_t valsize;
+    char* fullpath = get_path(tpath);
+    FILE *fp, *tmp;
 
-	(void) fi;
-	fd = open(path, O_WRONLY);
-	if (fd == -1)
-		return -errno;
+    (void) fi;
 
-	res = pwrite(fd, buf, size, offset);
-	if (res == -1)
-		res = -errno;
+    valsize = checkEncrypted(fullpath);
+    if (valsize != 0) {
+			printf("Encrypted");
+        char* tmppath;
+        tmppath = malloc(sizeof(char)*(strlen(fullpath) + strlen(".temp") + 1));
+        tmppath[0] = '\0';
+        strcat(tmppath, fullpath);
+        strcat(tmppath, ".temp");
 
-	close(fd);
-	return res;
+        fp = fopen(fullpath, "rb+");
+        tmp = fopen(tmppath, "wb+");
+
+        //fseek(fp, 0, SEEK_SET);
+        do_crypt(fp, tmp, 0, EN_PARAMS->key);
+        fseek(fp, 0, SEEK_SET);
+
+        res = fwrite(buf, 1, size, tmp);
+
+        if (res == -1){
+            return -errno;}
+
+        fseek(tmp, 0, SEEK_SET);
+        do_crypt(tmp, fp, 1, EN_PARAMS->key);
+
+				addEncryptAttrib(fullpath);
+
+        fclose(fp);
+        fclose(tmp);
+        remove(tmppath);
+
+
+}
+else {
+
+			 char* tmppath;
+			 tmppath = malloc(sizeof(char)*(strlen(fullpath) + strlen(".temp") + 1));
+			 tmppath[0] = '\0';
+			 strcat(tmppath, fullpath);
+			 strcat(tmppath, ".temp");
+
+			 fp = fopen(fullpath, "rb+");
+			 tmp = fopen(tmppath, "wb+");
+			 res = fwrite(buf, 1, size, tmp);
+
+			 if (res == -1){
+					 return -errno;}
+
+			fseek(tmp, 0, SEEK_SET);
+	 		do_crypt(tmp, fp, 1, EN_PARAMS->key);
+
+			addEncryptAttrib(fullpath);
+
+	 		fclose(fp);
+	 		fclose(tmp);
+	 		remove(tmppath);
+	 }
+	 return res;
+
 }
 
 static int xmp_statfs(const char *tpath, struct statvfs *stbuf)
@@ -334,14 +426,19 @@ static int xmp_statfs(const char *tpath, struct statvfs *stbuf)
 static int xmp_create(const char* tpath, mode_t mode, struct fuse_file_info* fi) {
 
     (void) fi;
-		char * path = get_path(tpath);
+		FILE *fp;
+		char * fullpath = get_path(tpath);
 
     int res;
-    res = creat(path, mode);
+    res = creat(fullpath, mode);
     if(res == -1)
-	return -errno;
-
+			return -errno;
+		fp = fdopen(res,"w");
     close(res);
+
+		do_crypt(fp,fp,0,EN_PARAMS->key);
+
+		fclose(fp);
 
     return 0;
 }
@@ -369,13 +466,66 @@ static int xmp_fsync(const char *tpath, int isdatasync,
 	(void) fi;
 	return 0;
 }
+//Check encryption attribute on file
+int checkEncrypted(const char *path) {
 
+	int temp;
+	char attir[5];
+	getxattr(path, "user.pa5-encfs.encrypted", attir, sizeof(char)*5);
+	if (strcmp(attir, "true") == 0){
+		return 1;
+	}
+	else{
+		return 0;
+	}
+	//
+	// valsize = getxattr(argv[3], tmpstr, tmpval, valsize);
+	// if(valsize < 0){
+	//     if(errno == ENOATTR){
+	// 	fprintf(stdout, "No %s attribute set on %s\n", tmpstr, argv[3]);
+	// 	free(tmpval);
+	// 	free(tmpstr);
+	// 	return EXIT_SUCCESS;
+	//     }
+	//     else{
+	// 	perror("getxattr error");
+	// 	fprintf(stderr, "path  = %s\n", argv[3]);
+	// 	fprintf(stderr, "name  = %s\n", tmpstr);
+	// 	fprintf(stderr, "value = %s\n", tmpval);
+	// 	fprintf(stderr, "size  = %zd\n", valsize);
+	// 	exit(EXIT_FAILURE);
+	//     }
+}
 //add encryption attribute to file
-// void addEncryptAttrib(const char *path){
-// 	int temp;
-// 	int attributeReturn = setxattr(path, "user.enc","true", (sizeof(char)*5), 0);
-//
-// }
+void addEncryptAttrib(const char *path){
+	char *tmpstr = NULL;
+	char *trues = "true";
+	char *argv2 = "pa5-encfs.encrypted";
+	// int temp;
+	// int attributeReturn = setxattr(path, "pa5-encfs.encrypted","true", (sizeof(char)*20), 0);
+	// temp = attributeReturn == 0;
+	// return temp;
+
+	/* Append necessary 'user.' namespace prefix to beginning of name string */
+	tmpstr = malloc(strlen(path) + XATTR_USER_PREFIX_LEN + 1);
+	if(!tmpstr){
+	    perror("malloc of 'tmpstr' error");
+	    exit(EXIT_FAILURE);
+	}
+	strcpy(tmpstr, XATTR_USER_PREFIX);
+	strcat(tmpstr, argv2);
+	/* Set attribute */
+	if(setxattr(path, tmpstr, trues, strlen(trues), 0)){
+	    perror("setxattr error");
+	    fprintf(stderr, "path  = %s\n", path);
+	    fprintf(stderr, "name  = %s\n", tmpstr);
+	    fprintf(stderr, "value = %s\n", trues);
+	    fprintf(stderr, "size  = %zd\n", strlen(trues));
+	    exit(EXIT_FAILURE);
+	}
+	/* Cleanup */
+	free(tmpstr);
+}
 
 #ifdef HAVE_SETXATTR
 static int xmp_setxattr(const char *tpath, const char *name, const char *value,
@@ -450,22 +600,20 @@ static struct fuse_operations xmp_oper = {
 
 int main(int argc, char *argv[])
 {
+
 	umask(0);
-	if ( argc <= 4 ) /* argc should be 4 for correct execution */
+	if ( argc < 4 ) /* argc should be 4 for correct execution */
 	 {
 
-			 printf( "not enough arguments" );
+			 fprintf(stderr,"not enough arguments\n" );
 	 }
 
-	 //check to see if the file is encrypted
-	 int isEncrypted =  xmp_getxattr(data->directory, "enc", 1,
-	 			size_t siz)
-	//  use our encryptParamter struct
 	 encryptParameters *data = NULL;
+
 	 data = malloc(sizeof(encryptParameters));
 
 	 if (data == NULL){ //check to make sure data exists
-		 printf("Error allocating ");
+		 printf(stdout, "Error allocating ");
 	 }
 
 

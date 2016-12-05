@@ -8,6 +8,7 @@
  * Modified 04/18/12
  *
  */
+ 
 
 #include <string.h>
 #include <stdio.h>
@@ -17,7 +18,7 @@
 
 int main(int argc, char **argv)
 {
-    
+
     /* Local vars */
     int action = 0;
     int ifarg;
