@@ -16,6 +16,11 @@ Nicholas Clement
 
 #define FUSE_USE_VERSION 28
 #define HAVE_SETXATTR
+#define ENCRYPT 1
+#define DECRYPT 0
+#define PASS -1
+#define ENC_XATTR "user.pa5-encfs.encrypted"
+
 
 /* Add namespace defintion for older kernels. Normally included in linux/xattr.h */
 #ifndef XATTR_USER_PREFIX
@@ -45,54 +50,73 @@ Nicholas Clement
 #include <sys/xattr.h>
 #endif
 
-#define EN_PARAMS ((encryptParameters*) fuse_get_context()->private_data)
+// #define EN_PARAMS ((encryptParameters*) fuse_get_context()->private_data)
+//
+// typedef struct{
+// 	char * directory;
+// 	char * key;
+// }encryptParameters;
 
-typedef struct{
-	char * directory;
-	char * key;
-}encryptParameters;
+typedef struct {
+    char *rootdir;
+    char *key;
+} inputParam;
+
+static void encfs_fullpath(char fpath[PATH_MAX], const char *path)
+{
+
+    inputParam *state = (inputParam *) (fuse_get_context()->private_data);
+    strcpy(fpath, state->rootdir);
+    strncat(fpath, path, PATH_MAX);
+}
 
 /*function that returns path of directory
 accesses private struct to get the directory*/
 
-char* get_path(const char *path) {
-	int len = strlen(path) + strlen(EN_PARAMS->directory) + 1;
-	char* ret = malloc(sizeof(char) * len);
-	strcpy(ret, EN_PARAMS->directory);
-	strcat(ret, path);
-	return ret;
-}
+// char* get_path(const char *path) {
+// 	int len = strlen(path) + strlen(EN_PARAMS->directory) + 1;
+// 	char* ret = malloc(sizeof(char) * len);
+// 	strcpy(ret, EN_PARAMS->directory);
+// 	strcat(ret, path);
+// 	return ret;
+// }
 
-static int xmp_getattr(const char *tpath, struct stat *stbuf)
+static int xmp_getattr(const char *path, struct stat *stbuf)
 {
-	char * path = get_path(tpath);
+	//update path
+	char fullpath[PATH_MAX];
+  encfs_fullpath(fullpath, path);
 	int res;
 
-	res = lstat(path, stbuf);
+	res = lstat(fullpath, stbuf);
 	if (res == -1)
 		return -errno;
 
 	return 0;
 }
 
-static int xmp_access(const char *tpath, int mask)
+static int xmp_access(const char *path, int mask)
 {
-	char * path = get_path(tpath);
+	//update path
+	char fullpath[PATH_MAX];
+  encfs_fullpath(fullpath, path);
 	int res;
 
-	res = access(path, mask);
+	res = access(fullpath, mask);
 	if (res == -1)
 		return -errno;
 
 	return 0;
 }
 
-static int xmp_readlink(const char *tpath, char *buf, size_t size)
+static int xmp_readlink(const char *path, char *buf, size_t size)
 {
-	char * path = get_path(tpath);
+	//update path
+	char fullpath[PATH_MAX];
+  encfs_fullpath(fullpath, path);
 	int res;
 
-	res = readlink(path, buf, size - 1);
+	res = readlink(fullpath, buf, size - 1);
 	if (res == -1)
 		return -errno;
 
@@ -101,17 +125,19 @@ static int xmp_readlink(const char *tpath, char *buf, size_t size)
 }
 
 
-static int xmp_readdir(const char *tpath, void *buf, fuse_fill_dir_t filler,
+static int xmp_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 		       off_t offset, struct fuse_file_info *fi)
 {
-	char * path = get_path(tpath);
+	//update path
+char fullpath[PATH_MAX];
+encfs_fullpath(fullpath, path);
 	DIR *dp;
 	struct dirent *de;
 
 	(void) offset;
 	(void) fi;
 
-	dp = opendir(path);
+	dp = opendir(fullpath);
 	if (dp == NULL)
 		return -errno;
 
@@ -128,57 +154,65 @@ static int xmp_readdir(const char *tpath, void *buf, fuse_fill_dir_t filler,
 	return 0;
 }
 
-static int xmp_mknod(const char *tpath, mode_t mode, dev_t rdev)
+static int xmp_mknod(const char *path, mode_t mode, dev_t rdev)
 {
-	char * path = get_path(tpath);
+ //update path
+char fullpath[PATH_MAX];
+encfs_fullpath(fullpath, path);
 	int res;
 
 	/* On Linux this could just be 'mknod(path, mode, rdev)' but this
 	   is more portable */
 	if (S_ISREG(mode)) {
-		res = open(path, O_CREAT | O_EXCL | O_WRONLY, mode);
+		res = open(fullpath, O_CREAT | O_EXCL | O_WRONLY, mode);
 		if (res >= 0)
 			res = close(res);
 	} else if (S_ISFIFO(mode))
-		res = mkfifo(path, mode);
+		res = mkfifo(fullpath, mode);
 	else
-		res = mknod(path, mode, rdev);
+		res = mknod(fullpath, mode, rdev);
 	if (res == -1)
 		return -errno;
 
 	return 0;
 }
 
-static int xmp_mkdir(const char *tpath, mode_t mode)
+static int xmp_mkdir(const char *path, mode_t mode)
 {
-	char * path = get_path(tpath);
+	//update path
+	char fullpath[PATH_MAX];
+	encfs_fullpath(fullpath, path);
 	int res;
 
-	res = mkdir(path, mode);
+	res = mkdir(fullpath, mode);
 	if (res == -1)
 		return -errno;
 
 	return 0;
 }
 
-static int xmp_unlink(const char *tpath)
+static int xmp_unlink(const char *path)
 {
-	char * path = get_path(tpath);
+	//update path
+	char fullpath[PATH_MAX];
+  encfs_fullpath(fullpath, path);
 	int res;
 
-	res = unlink(path);
+	res = unlink(fullpath);
 	if (res == -1)
 		return -errno;
 
 	return 0;
 }
 
-static int xmp_rmdir(const char *tpath)
+static int xmp_rmdir(const char *path)
 {
-	char * path = get_path(tpath);
+	//update path
+	char fullpath[PATH_MAX];
+  encfs_fullpath(fullpath, path);
 	int res;
 
-	res = rmdir(path);
+	res = rmdir(fullpath);
 	if (res == -1)
 		return -errno;
 
@@ -219,45 +253,53 @@ static int xmp_link(const char *from, const char *to)
 	return 0;
 }
 
-static int xmp_chmod(const char *tpath, mode_t mode)
+static int xmp_chmod(const char *path, mode_t mode)
 {
-	char * path = get_path(tpath);
+	//update path
+	char fullpath[PATH_MAX];
+  encfs_fullpath(fullpath, path);
 	int res;
 
-	res = chmod(path, mode);
+	res = chmod(fullpath, mode);
 	if (res == -1)
 		return -errno;
 
 	return 0;
 }
 
-static int xmp_chown(const char *tpath, uid_t uid, gid_t gid)
+static int xmp_chown(const char *path, uid_t uid, gid_t gid)
 {
-	char * path = get_path(tpath);
+	//update path
+	char fullpath[PATH_MAX];
+  encfs_fullpath(fullpath, path);
 	int res;
 
-	res = lchown(path, uid, gid);
+	res = lchown(fullpath, uid, gid);
 	if (res == -1)
 		return -errno;
 
 	return 0;
 }
 
-static int xmp_truncate(const char *tpath, off_t size)
+static int xmp_truncate(const char *path, off_t size)
 {
-	char * path = get_path(tpath);
+	//update path
+	char fullpath[PATH_MAX];
+  encfs_fullpath(fullpath, path);
 	int res;
 
-	res = truncate(path, size);
+	res = truncate(fullpath, size);
 	if (res == -1)
 		return -errno;
 
 	return 0;
 }
 
-static int xmp_utimens(const char *tpath, const struct timespec ts[2])
+static int xmp_utimens(const char *path, const struct timespec ts[2])
 {
-	char * path = get_path(tpath);
+	//update path
+	char fullpath[PATH_MAX];
+  encfs_fullpath(fullpath, path);
 	int res;
 	struct timeval tv[2];
 
@@ -266,19 +308,21 @@ static int xmp_utimens(const char *tpath, const struct timespec ts[2])
 	tv[1].tv_sec = ts[1].tv_sec;
 	tv[1].tv_usec = ts[1].tv_nsec / 1000;
 
-	res = utimes(path, tv);
+	res = utimes(fullpath, tv);
 	if (res == -1)
 		return -errno;
 
 	return 0;
 }
 
-static int xmp_open(const char *tpath, struct fuse_file_info *fi)
+static int xmp_open(const char *path, struct fuse_file_info *fi)
 {
-	char * path = get_path(tpath);
+	//update path
+	char fullpath[PATH_MAX];
+  encfs_fullpath(fullpath, path);
 	int res;
 
-	res = open(path, fi->flags);
+	res = open(fullpath, fi->flags);
 	if (res == -1)
 		return -errno;
 
@@ -286,20 +330,22 @@ static int xmp_open(const char *tpath, struct fuse_file_info *fi)
 	return 0;
 }
 
-static int xmp_read(const char *tpath, char *buf, size_t size, off_t offset,
+static int xmp_read(const char *path, char *buf, size_t size, off_t offset,
 		    struct fuse_file_info *fi)
 {
+
 	int fd;
 	int res;
-    ssize_t sizes;
+    ssize_t valsize;
+    char fullpath[PATH_MAX];
     FILE *fp, *tmp;
 
-    char *fullpath = get_path(tpath);
+    encfs_fullpath(fullpath, path);
 
     (void) fi;
-		//handle encryption
-    sizes = checkEncrypted(fullpath);
-    if (sizes == 1) {
+
+    valsize = getxattr(fullpath, ENC_XATTR, NULL, 0);
+    if (valsize >= 0) {
         char* tmppath;
         tmppath = malloc(sizeof(char)*(strlen(fullpath) + strlen(".temp") + 1));
         tmppath[0] = '\0';
@@ -309,7 +355,7 @@ static int xmp_read(const char *tpath, char *buf, size_t size, off_t offset,
         tmp = fopen(tmppath, "wb+");
         fp = fopen(fullpath, "rb");
 
-        do_crypt(fp, tmp, 0, EN_PARAMS->key);
+        do_crypt(fp, tmp, DECRYPT, ((inputParam *) fuse_get_context()->private_data)->key);
 
         fseek(tmp, 0, SEEK_END);
         size_t len = ftell(tmp);
@@ -323,7 +369,6 @@ static int xmp_read(const char *tpath, char *buf, size_t size, off_t offset,
         fclose(tmp);
         remove(tmppath);
     }
-		//handle the case of the file not being encrypted
     else {
 	    fd = open(fullpath, O_RDONLY);
 	    if (fd == -1)
@@ -340,20 +385,22 @@ static int xmp_read(const char *tpath, char *buf, size_t size, off_t offset,
 }
 
 
-static int xmp_write(const char *tpath, const char *buf, size_t size,
+static int xmp_write(const char *path, const char *buf, size_t size,
 		     off_t offset, struct fuse_file_info *fi)
 {
+
 	int fd;
 	int res;
     ssize_t valsize;
-    char* fullpath = get_path(tpath);
+    char fullpath[PATH_MAX];
     FILE *fp, *tmp;
+
+    encfs_fullpath(fullpath, path);
 
     (void) fi;
 
-    valsize = checkEncrypted(fullpath);
-    if (valsize != 0) {
-			printf("Encrypted");
+    valsize = getxattr(fullpath, ENC_XATTR, NULL, 0);
+    if (valsize >= 0) {
         char* tmppath;
         tmppath = malloc(sizeof(char)*(strlen(fullpath) + strlen(".temp") + 1));
         tmppath[0] = '\0';
@@ -363,71 +410,59 @@ static int xmp_write(const char *tpath, const char *buf, size_t size,
         fp = fopen(fullpath, "rb+");
         tmp = fopen(tmppath, "wb+");
 
-        //fseek(fp, 0, SEEK_SET);
-        do_crypt(fp, tmp, 0, EN_PARAMS->key);
+        fseek(fp, 0, SEEK_SET);
+
+        do_crypt(fp, tmp, DECRYPT, ((inputParam *) fuse_get_context()->private_data)->key);
+
         fseek(fp, 0, SEEK_SET);
 
         res = fwrite(buf, 1, size, tmp);
-
-        if (res == -1){
-            return -errno;}
+        if (res == -1)
+            return -errno;
 
         fseek(tmp, 0, SEEK_SET);
-        do_crypt(tmp, fp, 1, EN_PARAMS->key);
 
-				addEncryptAttrib(fullpath);
+        do_crypt(tmp, fp, ENCRYPT, ((inputParam *) fuse_get_context()->private_data)->key);
 
         fclose(fp);
         fclose(tmp);
         remove(tmppath);
+    }
+    else {
+	    fd = open(fullpath, O_WRONLY);
+	    if (fd == -1)
+		    return -errno;
 
+        res = pwrite(fd, buf, size, offset);
+	    if (res == -1)
+		    res = -errno;
 
+    	close(fd);
+    }
+
+	return res;
 }
-else {
-
-			 char* tmppath;
-			 tmppath = malloc(sizeof(char)*(strlen(fullpath) + strlen(".temp") + 1));
-			 tmppath[0] = '\0';
-			 strcat(tmppath, fullpath);
-			 strcat(tmppath, ".temp");
-
-			 fp = fopen(fullpath, "rb+");
-			 tmp = fopen(tmppath, "wb+");
-			 res = fwrite(buf, 1, size, tmp);
-
-			 if (res == -1){
-					 return -errno;}
-
-			fseek(tmp, 0, SEEK_SET);
-	 		do_crypt(tmp, fp, 1, EN_PARAMS->key);
-
-			addEncryptAttrib(fullpath);
-
-	 		fclose(fp);
-	 		fclose(tmp);
-	 		remove(tmppath);
-	 }
-	 return res;
-
-}
-
-static int xmp_statfs(const char *tpath, struct statvfs *stbuf)
+static int xmp_statfs(const char *path, struct statvfs *stbuf)
 {
-	char * path = get_path(tpath);
+	//update path
+	char fullpath[PATH_MAX];
+  encfs_fullpath(fullpath, path);
 	int res;
 
-	res = statvfs(path, stbuf);
+	res = statvfs(fullpath, stbuf);
 	if (res == -1)
 		return -errno;
 
 	return 0;
 }
 
-static int xmp_create(const char* tpath, mode_t mode, struct fuse_file_info* fi) {
+static int xmp_create(const char* path, mode_t mode, struct fuse_file_info* fi) {
 
     (void) fi;
 		FILE *fp;
-		char * fullpath = get_path(tpath);
+		//update path
+		char fullpath[PATH_MAX];
+	  encfs_fullpath(fullpath, path);
 
     int res;
     res = creat(fullpath, mode);
@@ -436,30 +471,38 @@ static int xmp_create(const char* tpath, mode_t mode, struct fuse_file_info* fi)
 		fp = fdopen(res,"w");
     close(res);
 
-		do_crypt(fp,fp,0,EN_PARAMS->key);
+		do_crypt(fp,fp,ENCRYPT,((inputParam *) fuse_get_context()->private_data)->key);
 
 		fclose(fp);
+
+		if (setxattr(fullpath, ENC_XATTR, "true", 4, 0) == -1) {
+        return -errno;
+    }
 
     return 0;
 }
 
 
-static int xmp_release(const char *tpath, struct fuse_file_info *fi)
+static int xmp_release(const char *path, struct fuse_file_info *fi)
 {
 	/* Just a stub.	 This method is optional and can safely be left
 	   unimplemented */
-	char * path = get_path(tpath);
+		 //update path
+		// 	char fullpath[PATH_MAX];
+	  //  encfs_fullpath(fullpath, path);
 	(void) path;
 	(void) fi;
 	return 0;
 }
 
-static int xmp_fsync(const char *tpath, int isdatasync,
+static int xmp_fsync(const char *path, int isdatasync,
 		     struct fuse_file_info *fi)
 {
 	/* Just a stub.	 This method is optional and can safely be left
 	   unimplemented */
-	char * path = get_path(tpath);
+		 //update path
+		// 	char fullpath[PATH_MAX];
+	  //  encfs_fullpath(fullpath, path);
 
 	(void) path;
 	(void) isdatasync;
@@ -469,42 +512,23 @@ static int xmp_fsync(const char *tpath, int isdatasync,
 //Check encryption attribute on file
 int checkEncrypted(const char *path) {
 
-	int temp;
+	char fullpath[PATH_MAX];
+ encfs_fullpath(fullpath, path);
 	char attir[5];
-	getxattr(path, "user.pa5-encfs.encrypted", attir, sizeof(char)*5);
+	getxattr(fullpath, "user.pa5-encfs.encrypted", attir, sizeof(char)*5);
 	if (strcmp(attir, "true") == 0){
 		return 1;
 	}
 	else{
 		return 0;
 	}
-	//
-	// valsize = getxattr(argv[3], tmpstr, tmpval, valsize);
-	// if(valsize < 0){
-	//     if(errno == ENOATTR){
-	// 	fprintf(stdout, "No %s attribute set on %s\n", tmpstr, argv[3]);
-	// 	free(tmpval);
-	// 	free(tmpstr);
-	// 	return EXIT_SUCCESS;
-	//     }
-	//     else{
-	// 	perror("getxattr error");
-	// 	fprintf(stderr, "path  = %s\n", argv[3]);
-	// 	fprintf(stderr, "name  = %s\n", tmpstr);
-	// 	fprintf(stderr, "value = %s\n", tmpval);
-	// 	fprintf(stderr, "size  = %zd\n", valsize);
-	// 	exit(EXIT_FAILURE);
-	//     }
 }
+
 //add encryption attribute to file
 void addEncryptAttrib(const char *path){
 	char *tmpstr = NULL;
 	char *trues = "true";
 	char *argv2 = "pa5-encfs.encrypted";
-	// int temp;
-	// int attributeReturn = setxattr(path, "pa5-encfs.encrypted","true", (sizeof(char)*20), 0);
-	// temp = attributeReturn == 0;
-	// return temp;
 
 	/* Append necessary 'user.' namespace prefix to beginning of name string */
 	tmpstr = malloc(strlen(path) + XATTR_USER_PREFIX_LEN + 1);
@@ -515,7 +539,7 @@ void addEncryptAttrib(const char *path){
 	strcpy(tmpstr, XATTR_USER_PREFIX);
 	strcat(tmpstr, argv2);
 	/* Set attribute */
-	if(setxattr(path, tmpstr, trues, strlen(trues), 0)){
+	if(setxattr(path, "user.pa5-encfs.encrypted", "true", strlen(trues), 0)){
 	    perror("setxattr error");
 	    fprintf(stderr, "path  = %s\n", path);
 	    fprintf(stderr, "name  = %s\n", tmpstr);
@@ -528,39 +552,47 @@ void addEncryptAttrib(const char *path){
 }
 
 #ifdef HAVE_SETXATTR
-static int xmp_setxattr(const char *tpath, const char *name, const char *value,
+static int xmp_setxattr(const char *path, const char *name, const char *value,
 			size_t size, int flags)
 {
-	char * path = get_path(tpath);
-	int res = lsetxattr(path, name, value, size, flags);
+	//update path
+	char fullpath[PATH_MAX];
+  encfs_fullpath(fullpath, path);
+	int res = lsetxattr(fullpath, name, value, size, flags);
 	if (res == -1)
 		return -errno;
 	return 0;
 }
 
-static int xmp_getxattr(const char *tpath, const char *name, char *value,
+static int xmp_getxattr(const char *path, const char *name, char *value,
 			size_t size)
 {
-		char * path = get_path(tpath);
-	int res = lgetxattr(path, name, value, size);
+	//update path
+	char fullpath[PATH_MAX];
+	encfs_fullpath(fullpath, path);
+	int res = lgetxattr(fullpath, name, value, size);
 	if (res == -1)
 		return -errno;
 	return res;
 }
 
-static int xmp_listxattr(const char *tpath, char *list, size_t size)
+static int xmp_listxattr(const char *path, char *list, size_t size)
 {
-	char * path = get_path(tpath);
-	int res = llistxattr(path, list, size);
+	//update path
+	char fullpath[PATH_MAX];
+  encfs_fullpath(fullpath, path);
+	int res = llistxattr(fullpath, list, size);
 	if (res == -1)
 		return -errno;
 	return res;
 }
 
-static int xmp_removexattr(const char *tpath, const char *name)
+static int xmp_removexattr(const char *path, const char *name)
 {
-	char * path = get_path(tpath);
-	int res = lremovexattr(path, name);
+	//update path
+	char fullpath[PATH_MAX];
+  encfs_fullpath(fullpath, path);
+	int res = lremovexattr(fullpath, name);
 	if (res == -1)
 		return -errno;
 	return 0;
@@ -602,31 +634,19 @@ int main(int argc, char *argv[])
 {
 
 	umask(0);
-	if ( argc < 4 ) /* argc should be 4 for correct execution */
-	 {
 
-			 fprintf(stderr,"not enough arguments\n" );
-	 }
+    if (argc < 4) {
+        fprintf(stderr, "Usage: %s %s \n", argv[0], "<Key> <Mirror Directory> <Mount Point>");
+        return EXIT_FAILURE;
+    }
 
-	 encryptParameters *data = NULL;
+    inputParam *encfs_data;
 
-	 data = malloc(sizeof(encryptParameters));
+    encfs_data = malloc(sizeof(inputParam));
 
-	 if (data == NULL){ //check to make sure data exists
-		 printf(stdout, "Error allocating ");
-	 }
+    encfs_data->key = argv[1];
+    encfs_data->rootdir = realpath(argv[2], NULL);
 
+	return fuse_main(argc - 2, argv + 2, &xmp_oper, encfs_data);
 
-
-	 data-> directory = realpath(argv[argc-2], NULL);
-	 data -> key = argv[1];
-	// encryptParameters -> directory = argv[2];
-	 argv[1] = argv[3];
-	 argv[3] = NULL;
-	 argv[2] = NULL;
-
-	 argc = argc-2;
-
-
-	return fuse_main(argc, argv, &xmp_oper, data);
 }
