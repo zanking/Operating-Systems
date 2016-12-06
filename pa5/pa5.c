@@ -313,7 +313,8 @@ static int xmp_open(const char *path, struct fuse_file_info *fi)
 	close(res);
 	return 0;
 }
-
+/* check file attributes for encryption, if encrypted
+then decrypt and then read, if not encrypted then just read */
 static int xmp_read(const char *path, char *buf, size_t size, off_t offset,
 		    struct fuse_file_info *fi)
 {
@@ -330,29 +331,26 @@ static int xmp_read(const char *path, char *buf, size_t size, off_t offset,
 
     valsize = getxattr(fullpath, ENC_XATTR, NULL, 0);
     if (valsize >= 0) {
-        char* tmppath;
-        tmppath = malloc(sizeof(char)*(strlen(fullpath) + strlen(".temp") + 1));
-        tmppath[0] = '\0';
-        strcat(tmppath, fullpath);
-        strcat(tmppath, ".temp");
-
-        tmp = fopen(tmppath, "wb+");
+      	//create temp file for decryption
+				//tempfile() auto removes itself after the funciton
+				tmp = tmpfile();
         fp = fopen(fullpath, "rb");
-
+				//decrypt for reading
         do_crypt(fp, tmp, DECRYPT, ((inputParam *) fuse_get_context()->private_data)->key);
-
+				//set file pointer location
         fseek(tmp, 0, SEEK_END);
         size_t len = ftell(tmp);
         fseek(tmp, 0, SEEK_SET);
-
+				//preform read operation
         res = fread(buf, 1, len, tmp);
         if (res == -1)
             return -errno;
-
+				//close files after reading
         fclose(fp);
         fclose(tmp);
-        remove(tmppath);
+
     }
+		//for the case of the file not being encrypted
     else {
 	    fd = open(fullpath, O_RDONLY);
 	    if (fd == -1)
@@ -367,6 +365,7 @@ static int xmp_read(const char *path, char *buf, size_t size, off_t offset,
 
 	return res;
 }
+
 
 /*check the file attributes to see if it is encrypted, if it is DECRYPT,
 then update the file, and encrypt
@@ -390,14 +389,12 @@ static int xmp_write(const char *path, const char *buf, size_t size,
 		// in the case of the file being encrypted
     if (valsize >= 0) {
 				//create a temp file, do_crypt has issues if reading/writing same file
-        char* tmppath;
-        tmppath = malloc(sizeof(char)*(strlen(fullpath) + strlen(".temp") + 1));
-        tmppath[0] = '\0';
-        strcat(tmppath, fullpath);
-        strcat(tmppath, ".temp");
+
+				tmp = tmpfile();
+
 				//open fp to read bytes and open tmppath to write bytes
         fp = fopen(fullpath, "rb+");
-        tmp = fopen(tmppath, "wb+");
+        //tmp = fopen(tmppath, "wb+");
 				//set the file posistion indicator with fseek
         fseek(fp, 0, SEEK_SET);
 				//time to decrypt
@@ -415,7 +412,7 @@ static int xmp_write(const char *path, const char *buf, size_t size,
 				//close files and remove the temp evidence
         fclose(fp);
         fclose(tmp);
-        remove(tmppath);
+
     }
 		//in the case of the file not being encrypted
     else {
